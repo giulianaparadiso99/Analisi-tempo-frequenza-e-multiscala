@@ -1,8 +1,5 @@
 """
-Esperimenti per valutare l'effetto di:
-- Durata del tono
-- Rumore gaussiano
-- Frequenza di campionamento
+Esperimenti per valutare l'effetto di durata del tono
 """
 
 import os
@@ -10,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
-from implementazione_DTMF import (
+from src.DTMF_implementation import (
     tone,
     recNumber,
     dialNumber,
@@ -369,7 +366,6 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
             save_path=os.path.join(save_folder, f"confusion_matrix_sequences_{duration}s.png")
         )
     
-    print("\n" + "="*60)
     print("RIEPILOGO RISULTATI")
     
     print("\nAccuratezza singoli toni:")
@@ -381,7 +377,6 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
         print(f"  {duration}s: {acc:.1f}%")
     
     print(f"\nTutti i risultati salvati in: {save_folder}/")
-    print("="*60 + "\n")
     
     return {
         'single_tones': single_tone_results,
