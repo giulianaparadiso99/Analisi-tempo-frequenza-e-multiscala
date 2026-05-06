@@ -134,7 +134,7 @@ def plot_spectrum(signal, Fs, plot_filename="spettro.png", save_folder="Plots"):
 
     return freqs, X_shifted
 
-def detect_single_tone(x, Fs, F1=None, F2=None, tones=None):
+def recNumber(x, Fs, F1=None, F2=None, tones=None):
     """
     Riconosce un singolo tono DTMF dal suo segnale x(t).
     """
@@ -181,7 +181,7 @@ def detect_single_tone(x, Fs, F1=None, F2=None, tones=None):
 
     return None
 
-def detect_sequence(signal, toneDuration, Fs):
+def recSequence(signal, toneDuration, Fs):
     """
     Riconosce una sequenza di toni concatenati.
     """
@@ -198,7 +198,7 @@ def detect_sequence(signal, toneDuration, Fs):
         if len(x) < samples_per_tone:
             break  # evita ultimo spezzone troppo corto
 
-        key = detect_single_tone(x, Fs)
+        key = recNumber(x, Fs)
         detected.append(key)
 
     return detected
@@ -245,7 +245,7 @@ def detect_sequence_pauses(signal, toneDuration, pauseDuration, Fs, silence_thre
             continue
 
         # riconoscimento
-        key = detect_single_tone(x_tone, Fs)
+        key = recNumber(x_tone, Fs)
         detected.append(key)
 
     return detected
