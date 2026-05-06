@@ -32,7 +32,7 @@ def test_single_tones_at_duration(duration, Fs=8000, all_tones=None):
     true_labels = []
     predicted_labels = []
     
-    print(f"\n--- Test durata: {duration}s ---")
+    print(f"\nTest durata: {duration}s")
     
     for tone_char in all_tones:
         # Genera il tono
@@ -336,7 +336,6 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
             print(error_report)  # Stampa anche a schermo
     
     print(f"\nReport errori salvato: {report_path}")
-    print("\n" + "="*60)
     print("PARTE 2: TEST SU SEQUENZE")
     
     sequence_results = {}

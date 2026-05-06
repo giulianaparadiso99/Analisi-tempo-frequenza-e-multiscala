@@ -95,8 +95,6 @@ def plot_noise_zoom_temporal(signal_clean, sigmas, Fs, zoom_start=0, zoom_durati
                              save_folder="Plots_noise"):
     """
     Crea zoom temporale per mostrare effetto del rumore sulla forma d'onda.
-    
-    Come la tua Figura 12.
     """
     os.makedirs(save_folder, exist_ok=True)
     
@@ -134,21 +132,19 @@ def plot_noise_zoom_temporal(signal_clean, sigmas, Fs, zoom_start=0, zoom_durati
 
 def test_noise_accuracy(sigmas, duration=0.15, Fs=8000, n_sequences=1000, n_trials=5):
     """
-    Testa accuratezza al variare del rumore (come il tuo Listing 9).
+    Testa accuratezza al variare del rumore.
     """
     accuracies = []
     snrs = []
     
-    print("\n" + "="*60)
     print("TEST ACCURATEZZA AL VARIARE DEL RUMORE")
-    print("="*60)
     
     for sigma in sigmas:
         total = 0
         correct = 0
         snr_list = []
         
-        print(f"\n--- σ = {sigma} ---")
+        print(f"\nσ = {sigma}")
         
         for _ in range(n_sequences):
             # Genera sequenza casuale
@@ -194,7 +190,7 @@ def test_noise_accuracy(sigmas, duration=0.15, Fs=8000, n_sequences=1000, n_tria
 
 def plot_accuracy_vs_sigma(sigmas, accuracies, save_path=None):
     """
-    Grafico accuratezza vs σ (la tua Figura 14).
+    Grafico accuratezza vs σ.
     """
     plt.figure(figsize=(10, 6))
     plt.plot(sigmas, accuracies, 'o-', linewidth=2, markersize=8, color='#E63946')
@@ -218,7 +214,7 @@ def plot_accuracy_vs_sigma(sigmas, accuracies, save_path=None):
 
 def plot_accuracy_vs_snr(snrs, accuracies, save_path=None):
     """
-    Grafico accuratezza vs SNR in dB (NUOVO - richiesto dalla consegna).
+    Grafico accuratezza vs SNR in dB.
     """
     # Filtra eventuali inf
     finite_mask = np.isfinite(snrs)
@@ -253,9 +249,7 @@ def test_noise_vs_duration(durations, sigmas, Fs=8000, n_sequences=50):
     """
     accuracy_matrix = np.zeros((len(durations), len(sigmas)))
     
-    print("\n" + "="*60)
     print("TEST ACCURATEZZA: DURATA × RUMORE")
-    print("="*60)
     
     for i, duration in enumerate(durations):
         print(f"\n--- Durata: {duration}s ---")
@@ -340,7 +334,6 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
     print("ESPERIMENTI: EFFETTO DEL RUMORE")
     
     # PARTE 1: Visualizzazioni segnale
-    
     print("\n1. Generazione grafici tempo/frequenza...")
     
     # Genera segnale esempio
