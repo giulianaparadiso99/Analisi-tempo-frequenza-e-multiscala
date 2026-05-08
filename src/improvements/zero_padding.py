@@ -30,11 +30,11 @@ def detect_single_tone_with_zeropadding(x, Fs, M=None, F1=None, F2=None, tones=N
         Lunghezza della FFT (con zero-padding se M > len(x))
         Se None, usa len(x) (nessun zero-padding)
     F1 : ndarray, optional
-        Frequenze basse (default: F1_DEFAULT)
+        Frequenze basse (default: ETSI standard)
     F2 : ndarray, optional
-        Frequenze alte (default: F2_DEFAULT)
+        Frequenze alte (default: ETSI standard)
     tones : dict, optional
-        Dizionario toni (default: TONES_DEFAULT)
+        Dizionario toni (default: ETSI standard)
         
     Returns
     -------
@@ -250,6 +250,17 @@ def test_zeropadding_vs_duration(durations, M_factors, Fs=8000, n_sequences=50):
 def plot_zeropadding_heatmap(durations, M_factors, accuracy_matrix, save_path=None):
     """
     Heatmap accuratezza vs durata e zero-padding.
+
+    Parameters
+    ----------
+    durations : list
+        Durate testate
+    M_factors : list
+        Fattori zero-padding testati
+    accuracy_matrix : ndarray
+        Matrice accuratezze
+    save_path : str, optional
+        Percorso salvataggio
     """
     
     plt.figure(figsize=(10, 8))
@@ -282,6 +293,24 @@ def run_zeropadding_experiments(durations=None, M_factors=None, Fs=8000,
     1. Confronti visivi spettro con/senza zero-padding
     2. Test accuratezza vs durata e M
     3. Heatmap durata × M
+
+    Parameters
+    ----------
+    durations : list, optional
+        Durate da testare (default: [0.02, 0.05, 0.1, 0.15, 0.2])
+    M_factors : list, optional
+        Fattori zero-padding (default: [1, 2, 4, 8])
+    Fs : int
+        Frequenza di campionamento
+    n_sequences : int
+        Numero sequenze per test
+    save_folder : str
+        Cartella output
+    
+    Returns
+    -------
+    results : dict
+        Risultati completi
     """
     if durations is None:
         durations = [0.02, 0.05, 0.1, 0.15, 0.2]

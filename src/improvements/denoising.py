@@ -6,10 +6,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
-from src.DTMF_implementation import (
-    recSequence,
-    dialNumber
-    )
+from src.DTMF_implementation import recSequence, dialNumber
 from src.experiments.noise import (
     generate_random_sequence,
     add_noise_to_signal,
@@ -19,7 +16,18 @@ from src.experiments.noise import (
 def moving_average_denoise(x, M):
     """
     Denoising con media mobile di ordine M.
-    Restituisce un segnale della stessa lunghezza di x.
+    
+    Parameters
+    ----------
+    x : ndarray
+        Segnale da filtrare
+    M : int
+        Ordine del filtro (larghezza finestra)
+    
+    Returns
+    -------
+    y : ndarray
+        Segnale filtrato, stessa lunghezza di x
     """
     kernel = np.ones(M) / M
     y = np.convolve(x, kernel, mode="same")
@@ -62,8 +70,22 @@ def bandpass_filter_dtmf(x, Fs, lowcut=650, highcut=1700, order=5):
 def leaky_integrator_denoise(x, lam):
     """
     Denoising con leaky integrator di primo ordine:
+    Implementa la ricorrenza:
         y[n] = lam * y[n-1] + (1 - lam) * x[n]
-    con 0 < lam < 1.
+    
+    Parameters
+    ----------
+    x : ndarray
+        Segnale da filtrare
+    lam : float
+        Parametro di memoria (0 < lam < 1)
+        Valori vicini a 1: più smoothing
+        Valori vicini a 0: meno smoothing
+    
+    Returns
+    -------
+    y : ndarray
+        Segnale filtrato
     """
     y = np.zeros_like(x)
     y[0] = (1 - lam) * x[0]
@@ -76,6 +98,21 @@ def test_denoising_methods(sigmas, duration=0.15, Fs=8000, n_sequences=100,
                           M=5, lam=0.8):
     """
     Testa e confronta tutti i metodi di denoising.
+    
+   Parameters
+    ----------
+    sigmas : list
+        Livelli di rumore da testare
+    duration : float
+        Durata dei toni
+    Fs : int
+        Frequenza di campionamento
+    n_sequences : int
+        Numero di sequenze per test
+    M : int
+        Ordine media mobile
+    lam : float
+        Parametro leaky integrator
     
     Returns
     -------
@@ -128,6 +165,15 @@ def test_denoising_methods(sigmas, duration=0.15, Fs=8000, n_sequences=100,
 def plot_denoising_comparison(sigmas, results, save_path=None):
     """
     Confronta visivamente tutti i metodi di denoising.
+
+    Parameters
+    ----------
+    sigmas : list
+        Livelli di rumore testati
+    results : dict
+        Accuratezze per ogni metodo
+    save_path : str, optional
+        Percorso salvataggio grafico
     """
     plt.figure(figsize=(10, 6))
     
@@ -172,6 +218,22 @@ def run_denoising_experiments(sigmas=None, Fs=8000, n_sequences=100,
                               save_folder="Plots_denoising"):
     """
     Esegue tutti gli esperimenti di denoising.
+
+    Parameters
+    ----------
+    sigmas : list, optional
+        Livelli di rumore (default: [0, 0.05, 0.2, 0.5, 1, 2, 3, 4, 5, 6])
+    Fs : int
+        Frequenza di campionamento
+    n_sequences : int
+        Numero di sequenze per test
+    save_folder : str
+        Cartella output
+    
+    Returns
+    -------
+    results : dict
+        Risultati completi esperimenti
     """
     if sigmas is None:
         sigmas = [0, 0.05, 0.2, 0.5, 1, 2, 3, 4, 5, 6]

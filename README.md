@@ -2,7 +2,7 @@
 
 Homework DTMF - Generazione e riconoscimento di tonalità Dual-Tone Multi-Frequency
 
-**Autorice:** Giuliana Paradiso  
+**Autrice:** Giuliana Paradiso  
 **Corso:** Analisi Tempo-Frequenza e Multiscala  
 **Istituto:** Politecnico di Torino  
 **Anno Accademico:** 2025/2026
@@ -31,16 +31,17 @@ Analisi-tempo-frequenza-e-multiscala/
 ├── src/
 │   ├── experiments/
 │   │   ├── duration.py
-│   │   ├── frequencies.py
-│   │   └── noise.py
+│   │   ├── noise.py
+│   │   └── sampling.py
 │   ├── improvements/
-│   │   ├── filtering.py
+│   │   ├── denoising.py
 │   │   └── zero_padding.py
 │   ├── DTMF_implementation.py
 │   └── generazione-e-riconoscimento-di-tonalit-dtmf.ipynb
 ├── report/
 │   └── Homework_analisi_tempo_frequenza.pdf
-└── README.md
+├── README.md
+└── requirements.txt
 
 ---
 
@@ -48,12 +49,12 @@ Analisi-tempo-frequenza-e-multiscala/
 
 ### Dipendenze Python
 
-numpy>=1.21.0
-matplotlib>=3.4.0
-scipy>=1.7.0
-scikit-learn>=1.0.0
-seaborn>=0.11.0
-jupyter>=1.0.0
+numpy
+matplotlib
+scipy
+scikit-learn
+seaborn
+jupyter
 
 Installazione:
 
@@ -73,7 +74,7 @@ Modulo base contenente le funzioni fondamentali:
 - dialNumber_pauses(...) - Genera sequenza con pause
 
 **Riconoscimento:**
-- detect_single_tone(x, Fs) - Riconosce un singolo tono
+- recNumber(x, Fs) - Riconosce un singolo tono
 - recSequence(signal, toneDuration, Fs) - Riconosce una sequenza
 
 **Visualizzazione:**
@@ -90,17 +91,6 @@ Analisi dell'effetto del rumore gaussiano:
 - Matrice durata × rumore
 - Visualizzazioni tempo/frequenza
 
-Funzione principale:
-
-from experiments.noise import run_noise_experiments
-
-results = run_noise_experiments(
-    sigmas=[0, 0.5, 1, 2, 3, 4],
-    durations=[0.05, 0.1, 0.15, 0.2, 0.5],
-    Fs=8000,
-    n_sequences=1000
-)
-
 #### experiments/duration.py
 
 Analisi dell'effetto della durata del tono:
@@ -109,7 +99,7 @@ Analisi dell'effetto della durata del tono:
 - Matrici di confusione
 - Analisi errori più frequenti
 
-#### experiments/frequencies.py
+#### experiments/sampling.py
 
 Analisi dell'effetto della frequenza di campionamento:
 - Sottocampionamento e aliasing
@@ -118,7 +108,7 @@ Analisi dell'effetto della frequenza di campionamento:
 
 ### 3. Miglioramenti
 
-#### improvements/filtering.py
+#### improvements/denoising.py
 
 Tecniche di denoising:
 - Filtro a media mobile
@@ -169,8 +159,8 @@ from experiments.duration import run_duration_experiments
 results_duration = run_duration_experiments(save_folder="risultati/duration")
 
 # Esperimenti sulla frequenza di campionamento
-from experiments.frequencies import run_sampling_experiments
-results_fs = run_sampling_experiments(save_folder="risultati/frequencies")
+from experiments.sampling import run_sampling_experiments
+results_fs = run_sampling_experiments(save_folder="risultati/sampling")
 
 ---
 
