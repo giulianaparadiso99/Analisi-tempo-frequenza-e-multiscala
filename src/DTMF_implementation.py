@@ -72,7 +72,7 @@ def tone(number, duration, Fs, tones=None, F1=None, F2=None):
     x = np.cos(2 * np.pi * f1 * t) + np.cos(2 * np.pi * f2 * t)
     return t, x
 
-def tone_plot_save(t, x, Fs, filename="tono.wav", plot_filename="tono.png"):
+def tone_plot_save(t, x, Fs, filename="tono.wav", plot_filename="tono.pdf", plot_folder="Plots/DTMF_implementation", audio_folder="Audio/tones"):
     """
     Visualizza e salva un singolo tono DTMF.
     
@@ -87,7 +87,11 @@ def tone_plot_save(t, x, Fs, filename="tono.wav", plot_filename="tono.png"):
     filename : str, optional
         Nome del file audio WAV
     plot_filename : str, optional
-        Nome del file immagine PNG
+        Nome del file immagine PDF
+    plot_folder : str, optional
+        Cartella di salvataggio per i plot
+    audio_folder : str, optional
+        Cartella di salvataggio per i file audio
     """
 
     # Plot
@@ -97,19 +101,25 @@ def tone_plot_save(t, x, Fs, filename="tono.wav", plot_filename="tono.png"):
     plt.xlabel("Tempo [s]")
     plt.ylabel("Ampiezza")
     plt.grid(True)
-    os.makedirs("Plots", exist_ok=True)
-    plt.savefig(os.path.join("Plots", plot_filename), dpi=300, bbox_inches="tight")
-    print(f"Plot salvato in: {os.path.join('Plots', plot_filename)}")
+
+    # Salvataggio plot
+    os.makedirs(plot_folder, exist_ok=True)
+    plot_path = os.path.join(plot_folder, plot_filename)
+    plt.tight_layout()
+    plt.savefig(plot_path, format='pdf', bbox_inches="tight")
+    print(f"Plot salvato in: {os.path.join(plot_folder, plot_filename)}")
     plt.show()
     plt.close()
 
     # Salvataggio WAV
+    os.makedirs(audio_folder, exist_ok=True)
+    audio_path = os.path.join(audio_folder, filename)
     x_norm = x / np.max(np.abs(x))
     x_int16 = np.int16(x_norm * 32767)
     write(filename, Fs, x_int16)
-    print(f"Audio salvato: {filename}")
+    print(f"Audio salvato: {audio_path}")
 
-def plot_all_tones_grid(duration=0.15, Fs=8000, save_folder="Plots"):
+def plot_all_tones_grid(duration=0.15, Fs=8000, plot_folder="Plots/DTMF_implementation"):
     """
     Visualizza tutti i 16 toni DTMF in una griglia 4x4.
     Genera due figure: dominio del tempo e dominio della frequenza.
@@ -123,6 +133,8 @@ def plot_all_tones_grid(duration=0.15, Fs=8000, save_folder="Plots"):
     
     # Plot tempo
     fig_time, axes_time = plt.subplots(4, 4, figsize=(20, 16))
+    fig_time.suptitle('Tutti i toni DTMF nel dominio del tempo', 
+                     fontsize=20, fontweight='bold', y=0.995)
     for r in range(4):
         for c in range(4):
             key = keypad_rows[r][c]
@@ -135,13 +147,15 @@ def plot_all_tones_grid(duration=0.15, Fs=8000, save_folder="Plots"):
             ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    time_path = os.path.join(save_folder, "all_tones_time.png")
-    fig_time.savefig(time_path, dpi=300, bbox_inches='tight')
+    time_path = os.path.join(plot_folder, "all_tones_time.pdf")
+    fig_time.savefig(time_path, format='pdf', bbox_inches='tight')
     plt.show()
     plt.close()
     
     # Plot frequenza
     fig_freq, axes_freq = plt.subplots(4, 4, figsize=(20, 16))
+    fig_freq.suptitle('Tutti i toni DTMF nel dominio della frequenza', 
+                     fontsize=20, fontweight='bold', y=0.995)
     for r in range(4):
         for c in range(4):
             key = keypad_rows[r][c]
@@ -158,12 +172,12 @@ def plot_all_tones_grid(duration=0.15, Fs=8000, save_folder="Plots"):
             ax.set_xlim(0, Fs/2)
     
     plt.tight_layout()
-    freq_path = os.path.join(save_folder, "all_tones_freq.png")
-    fig_freq.savefig(freq_path, dpi=300, bbox_inches='tight')
+    freq_path = os.path.join(plot_folder, "all_tones_freq.pdf")
+    fig_freq.savefig(freq_path, format='pdf', bbox_inches='tight')
     plt.show()
     plt.close()
     
-    print(f"Plot salvati in: {save_folder}/")
+    print(f"Plot salvati in: {plot_folder}/")
 
 def dialNumber(numbers, toneDuration, Fs):
     """
@@ -192,7 +206,7 @@ def dialNumber(numbers, toneDuration, Fs):
 
     return full_signal
 
-def plot_and_save_sequence(signal, Fs, filename="sequenza.wav", plot_filename="sequenza.png"):
+def plot_and_save_sequence(signal, Fs, filename="sequenza.wav", plot_filename="sequenza.pdf", plot_folder="Plots/DTMF_implementation", audio_folder="Audio/sequences"):
     """
     Visualizza e salva una sequenza di toni DTMF.
     
@@ -205,7 +219,11 @@ def plot_and_save_sequence(signal, Fs, filename="sequenza.wav", plot_filename="s
     filename : str, optional
         Nome del file audio WAV
     plot_filename : str, optional
-        Nome del file immagine PNG
+        Nome del file immagine PDF
+    plot_folder : str, optional
+        Cartella di salvataggio per i plot
+    audio_folder : str, optional
+        Cartella di salvataggio per i file audio
     """
 
     # Asse dei tempi
@@ -218,19 +236,25 @@ def plot_and_save_sequence(signal, Fs, filename="sequenza.wav", plot_filename="s
     plt.xlabel("Tempo [s]")
     plt.ylabel("Ampiezza")
     plt.grid(True)
-    os.makedirs("Plots", exist_ok=True)
-    plt.savefig(os.path.join("Plots", plot_filename), dpi=300, bbox_inches="tight")
-    print(f"Plot salvato in: {os.path.join('Plots', plot_filename)}")
+
+    # Salvataggio plot
+    os.makedirs(plot_folder, exist_ok=True)
+    plot_path = os.path.join(plot_folder, plot_filename)
+    plt.tight_layout()
+    plt.savefig(plot_path, format='pdf', bbox_inches="tight")
+    print(f"Plot salvato in: {plot_path}")
     plt.show()
     plt.close()
 
     # Audio
+    os.makedirs(audio_folder, exist_ok=True)
+    audio_path = os.path.join(audio_folder, filename)
     signal_norm = signal / np.max(np.abs(signal))
     signal_int16 = np.int16(signal_norm * 32767)
     write(filename, Fs, signal_int16)
-    print(f"Audio salvato: {filename}")
+    print(f"Audio salvato: {audio_path}")
 
-def plot_spectrum(signal, Fs, plot_filename="spettro.png", save_folder="Plots"):
+def plot_spectrum(signal, Fs, plot_filename="spettro.pdf", plot_folder="Plots/DTMF_implementation"):
     """
     Calcola e visualizza lo spettro di un segnale DTMF.
     
@@ -242,7 +266,7 @@ def plot_spectrum(signal, Fs, plot_filename="spettro.png", save_folder="Plots"):
         Frequenza di campionamento
     plot_filename : str, optional
         Nome del file immagine
-    save_folder : str, optional
+    plot_folder : str, optional
         Cartella di salvataggio
         
     Returns
@@ -271,10 +295,10 @@ def plot_spectrum(signal, Fs, plot_filename="spettro.png", save_folder="Plots"):
     plt.grid(True)
 
     # Salvataggio
-    os.makedirs(save_folder, exist_ok=True)
-    path = os.path.join(save_folder, plot_filename)
-    plt.savefig(path, dpi=300, bbox_inches='tight')
-    print(f"Plot salvato in: {path}")
+    os.makedirs(plot_folder, exist_ok=True)
+    plot_path = os.path.join(plot_folder, plot_filename)
+    plt.savefig(plot_path, format='pdf', bbox_inches='tight')
+    print(f"Plot salvato in: {plot_path}")
 
     plt.show()
     plt.close()
