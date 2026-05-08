@@ -23,7 +23,29 @@ ALL_TONES = ['1','2','3','4','5','6','7','8','9','0','*','#','A','B','C','D']
 # FUNZIONI ATOMICHE - SINGOLI TONI
 
 def test_single_tones_at_duration(duration, Fs=8000, all_tones=None):
-    """Testa riconoscimento di tutti i toni a una specifica durata"""
+    """
+    Testa il riconoscimento di tutti i toni DTMF a una specifica durata.
+    
+    Parameters
+    ----------
+    duration : float
+        Durata del tono in secondi
+    Fs : int, optional
+        Frequenza di campionamento (default: 8000)
+    all_tones : list, optional
+        Lista dei toni da testare (default: tutti i 16 toni)
+    
+    Returns
+    -------
+    results : dict
+        Dizionario contenente:
+        - 'accuracy': float, accuratezza in percentuale
+        - 'correct': int, numero di riconoscimenti corretti
+        - 'total': int, numero totale di toni testati
+        - 'true_labels': list, etichette reali
+        - 'predicted_labels': list, etichette predette
+    """
+
     if all_tones is None:
         all_tones = ALL_TONES
     
@@ -64,7 +86,19 @@ def test_single_tones_at_duration(duration, Fs=8000, all_tones=None):
     }
 
 def plot_accuracy_vs_duration_single(durations, accuracies, save_path=None):
-    """Plot accuratezza vs durata per singoli toni"""
+    """
+    Crea grafico dell'accuratezza vs durata per singoli toni.
+    
+    Parameters
+    ----------
+    durations : list
+        Lista delle durate testate (in secondi)
+    accuracies : list
+        Lista delle accuratezze corrispondenti (in %)
+    save_path : str, optional
+        Percorso per salvare il grafico
+    """
+
     plt.figure(figsize=(10, 6))
     plt.plot(durations, accuracies, 'o-', linewidth=2, markersize=8, color='#2E86AB')
     plt.xlabel('Durata del tono [s]', fontsize=12)
@@ -86,7 +120,21 @@ def plot_accuracy_vs_duration_single(durations, accuracies, save_path=None):
     plt.close()
     
 def plot_confusion_matrix(true_labels, predicted_labels, title, save_path=None):
-    """Crea matrice di confusione con heatmap"""
+    """
+    Crea matrice di confusione con heatmap.
+    
+    Parameters
+    ----------
+    true_labels : list
+        Etichette reali
+    predicted_labels : list
+        Etichette predette
+    title : str
+        Titolo del grafico
+    save_path : str, optional
+        Percorso per salvare il grafico
+    """
+    
     # Calcola matrice di confusione
     cm = confusion_matrix(true_labels, predicted_labels, labels=ALL_TONES)
     
@@ -112,7 +160,29 @@ def plot_confusion_matrix(true_labels, predicted_labels, title, save_path=None):
     plt.close()
     
 def analyze_errors(true_labels, predicted_labels, duration, F1=None, F2=None, tones=None):
-    """Analizza e spiega gli errori più frequenti"""
+    """
+    Analizza e spiega gli errori più frequenti.
+    
+    Parameters
+    ----------
+    true_labels : list
+        Etichette reali
+    predicted_labels : list
+        Etichette predette
+    duration : float
+        Durata del tono in secondi
+    F1 : ndarray, optional
+        Frequenze basse custom (default: ETSI standard)
+    F2 : ndarray, optional
+        Frequenze alte custom (default: ETSI standard)
+    tones : dict, optional
+        Dizionario custom dei toni (default: ETSI standard)
+    
+    Returns
+    -------
+    report : str
+        Rapporto sugli errori analizzati
+    """
     if F1 is None:
         F1 = F1_DEFAULT
     if F2 is None:
@@ -186,14 +256,52 @@ def analyze_errors(true_labels, predicted_labels, duration, F1=None, F2=None, to
 # FUNZIONI ATOMICHE - SEQUENZE
 
 def generate_random_sequence(length, all_tones=None):
-    """Genera una sequenza casuale di tasti DTMF"""
+    """
+    Genera una sequenza casuale di tasti DTMF.
+    
+    Parameters
+    ----------
+    length : int
+        Lunghezza della sequenza
+    all_tones : list, optional
+        Lista dei toni disponibili (default: tutti i 16 toni)
+    
+    Returns
+    -------
+    sequence : str
+        Sequenza casuale di tasti
+    """
+
     if all_tones is None:
         all_tones = ALL_TONES
     
     return ''.join(np.random.choice(all_tones, size=length))
     
-def test_sequences_at_duration(duration, Fs=8000, n_sequences=100, seq_length=10):
-    """Testa riconoscimento di sequenze casuali a una durata specifica"""
+def test_sequences_at_duration(duration, Fs=8000, n_sequences=50, seq_length=10):
+    """
+    Testa il riconoscimento di sequenze casuali a una specifica durata.
+    
+    Parameters
+    ----------
+    duration : float
+        Durata di ciascun tono nella sequenza
+    Fs : int, optional
+        Frequenza di campionamento
+    n_sequences : int, optional
+        Numero di sequenze casuali da testare
+    seq_length : int, optional
+        Lunghezza di ciascuna sequenza
+    
+    Returns
+    -------
+    results : dict
+        Dizionario contenente:
+        - 'accuracy': float, % di sequenze completamente corrette
+        - 'correct': int, numero di sequenze corrette
+        - 'total': int, numero totale di sequenze testate
+        - 'all_true_tones': list, tutti i toni reali (appiattiti)
+        - 'all_predicted_tones': list, tutti i toni predetti (appiattiti)
+    """
     correct_sequences = 0
     total_sequences = n_sequences
     
@@ -233,7 +341,19 @@ def test_sequences_at_duration(duration, Fs=8000, n_sequences=100, seq_length=10
     }
   
 def plot_accuracy_vs_duration_sequences(durations, accuracies, save_path=None):
-    """Plot accuratezza vs durata per sequenze"""
+    """
+    Crea grafico dell'accuratezza vs durata per sequenze.
+    
+    Parameters
+    ----------
+    durations : list
+        Lista delle durate testate (in secondi)
+    accuracies : list
+        Lista delle accuratezze corrispondenti (in %)
+    save_path : str, optional
+        Percorso per salvare il grafico
+    """
+
     plt.figure(figsize=(10, 6))
     plt.plot(durations, accuracies, 's-', linewidth=2, markersize=8, color='#A23B72')
     plt.xlabel('Durata del tono [s]', fontsize=12)
@@ -333,7 +453,7 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
                 duration
             )
             f.write(error_report)
-            print(error_report)  # Stampa anche a schermo
+            print(error_report)
     
     print(f"\nReport errori salvato: {report_path}")
     print("PARTE 2: TEST SU SEQUENZE")

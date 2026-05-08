@@ -29,8 +29,35 @@ def save_plot(filename, folder="Plots"):
 
 def tone(number, duration, Fs, tones=None, F1=None, F2=None):
     """Genera il tono DTMF per un singolo tasto,
-    generando un errore se il tasto non è valido"""
+    generando un errore se il tasto non è valido.
 
+    Parameters
+    ----------
+    number : str
+        Tasto da generare
+    duration : float
+        Durata del tono in secondi
+    Fs : int
+        Frequenza di campionamento in Hz
+    tones : dict, optional
+        Dizionario custom dei toni (default: ETSI standard)
+    F1 : ndarray, optional
+        Frequenze basse custom (default: ETSI standard)
+    F2 : ndarray, optional
+        Frequenze alte custom (default: ETSI standard)
+        
+    Returns
+    -------
+    t : ndarray
+        Array dei tempi
+    x : ndarray
+        Segnale DTMF generato
+        
+    Raises
+    ------
+    KeyError
+        Se il tasto non è valido
+    """
     # Usa valori default se non specificati
     if tones is None:
         tones = TONES_DEFAULT
@@ -50,8 +77,23 @@ def tone(number, duration, Fs, tones=None, F1=None, F2=None):
     return t, x
 
 def tone_plot_save(t, x, Fs, filename="tono.wav", plot_filename="tono.png"):
-    """Plot e salvataggio del segnale + salvataggio file audio"""
+    """
+    Visualizza e salva un singolo tono DTMF.
     
+    Parameters
+    ----------
+    t : ndarray
+        Array dei tempi
+    x : ndarray
+        Segnale DTMF
+    Fs : int
+        Frequenza di campionamento
+    filename : str, optional
+        Nome del file audio WAV
+    plot_filename : str, optional
+        Nome del file immagine PNG
+    """
+
     # Plot
     plt.figure(figsize=(10,5))
     plt.plot(t, x)
@@ -70,7 +112,24 @@ def tone_plot_save(t, x, Fs, filename="tono.wav", plot_filename="tono.png"):
     print(f"Audio salvato: {filename}")
 
 def dialNumber(numbers, toneDuration, Fs):
-    """Genera una sequenza concatenata di toni DTMF"""
+    """
+    Genera una sequenza concatenata di toni DTMF.
+    
+    Parameters
+    ----------
+    numbers : str
+        Sequenza di tasti da generare (es. "3456318060")
+    toneDuration : float
+        Durata di ciascun tono in secondi
+    Fs : int
+        Frequenza di campionamento in Hz
+        
+    Returns
+    -------
+    full_signal : ndarray
+        Segnale completo della sequenza
+    """
+
     full_signal = np.array([])
 
     for i in numbers:
@@ -80,7 +139,20 @@ def dialNumber(numbers, toneDuration, Fs):
     return full_signal
 
 def plot_and_save_sequence(signal, Fs, filename="sequenza.wav", plot_filename="sequenza.png"):
-    """Visualizza la sequenza DTMF nel tempo e salva WAV + PNG"""
+    """
+    Visualizza e salva una sequenza di toni DTMF.
+    
+    Parameters
+    ----------
+    signal : ndarray
+        Segnale della sequenza
+    Fs : int
+        Frequenza di campionamento in Hz
+    filename : str, optional
+        Nome del file audio WAV
+    plot_filename : str, optional
+        Nome del file immagine PNG
+    """
 
     # Asse dei tempi
     t = np.linspace(0, len(signal)/Fs, len(signal))
@@ -104,8 +176,27 @@ def plot_and_save_sequence(signal, Fs, filename="sequenza.wav", plot_filename="s
 
 def plot_spectrum(signal, Fs, plot_filename="spettro.png", save_folder="Plots"):
     """
-    Calcola e visualizza lo spettro e salva il plot nella cartella desiderata.
+    Calcola e visualizza lo spettro di un segnale DTMF.
+    
+    Parameters
+    ----------
+    signal : ndarray
+        Segnale da analizzare
+    Fs : int
+        Frequenza di campionamento
+    plot_filename : str, optional
+        Nome del file immagine
+    save_folder : str, optional
+        Cartella di salvataggio
+        
+    Returns
+    -------
+    freqs : ndarray
+        Array delle frequenze
+    X_shifted : ndarray
+        Trasformata di Fourier centrata
     """
+
     N = len(signal)
 
     # DFT
@@ -136,8 +227,27 @@ def plot_spectrum(signal, Fs, plot_filename="spettro.png", save_folder="Plots"):
 
 def recNumber(x, Fs, F1=None, F2=None, tones=None):
     """
-    Riconosce un singolo tono DTMF dal suo segnale x(t).
+    Riconosce un singolo tono DTMF dal suo segnale.
+    
+    Parameters
+    ----------
+    x : ndarray
+        Segnale del tono
+    Fs : int
+        Frequenza di campionamento in Hz
+    F1 : ndarray, optional
+        Frequenze basse custom (default: ETSI standard)
+    F2 : ndarray, optional
+        Frequenze alte custom (default: ETSI standard)
+    tones : dict, optional
+        Dizionario custom dei toni (default: ETSI standard)
+
+    Returns
+    -------
+    key : str or None
+        Tasto riconosciuto, None se non riconosciuto
     """
+
     # Usa valori default se non specificati
     if tones is None:
         tones = TONES_DEFAULT
@@ -183,7 +293,21 @@ def recNumber(x, Fs, F1=None, F2=None, tones=None):
 
 def recSequence(signal, toneDuration, Fs):
     """
-    Riconosce una sequenza di toni concatenati.
+    Riconosce una sequenza di toni DTMF concatenati.
+    
+    Parameters
+    ----------
+    signal : ndarray
+        Segnale della sequenza
+    toneDuration : float
+        Durata di ciascun tono in secondi
+    Fs : int
+        Frequenza di campionamento
+        
+    Returns
+    -------
+    detected : list
+        Lista dei tasti riconosciuti
     """
     samples_per_tone = int(Fs * toneDuration)
     N = len(signal)
@@ -196,7 +320,7 @@ def recSequence(signal, toneDuration, Fs):
         x = signal[start:end]
 
         if len(x) < samples_per_tone:
-            break  # evita ultimo spezzone troppo corto
+            break 
 
         key = recNumber(x, Fs)
         detected.append(key)
@@ -205,9 +329,25 @@ def recSequence(signal, toneDuration, Fs):
 
 def dialNumber_pauses(numbers, toneDuration, Fs, pauseDuration=0.05):
     """
-    Genera una sequenza di toni DTMF inserendo una pausa di silenzio
-    tra un tono e l'altro.
+    Genera una sequenza di toni DTMF con pause di silenzio.
+    
+    Parameters
+    ----------
+    numbers : str
+        Sequenza di tasti da generare
+    toneDuration : float
+        Durata di ciascun tono in secondi
+    Fs : int
+        Frequenza di campionamento in Hz
+    pauseDuration : float, optional
+        Durata della pausa tra toni in secondi (default: 0.05)
+        
+    Returns
+    -------
+    full_signal : ndarray
+        Segnale completo con pause
     """
+
     full_signal = np.array([])
     pause = np.zeros(int(Fs * pauseDuration))
 
@@ -219,11 +359,28 @@ def dialNumber_pauses(numbers, toneDuration, Fs, pauseDuration=0.05):
 
 def detect_sequence_pauses(signal, toneDuration, pauseDuration, Fs, silence_threshold=0.05):
     """
-    Riconosce una sequenza di toni DTMF concatenati con pause di silenzio.
-    I segmenti di pausa vengono ignorati.
+    Riconosce una sequenza DTMF con pause, ignorando i silenzi.
+    
+    Parameters
+    ----------
+    signal : ndarray
+        Segnale della sequenza con pause
+    toneDuration : float
+        Durata di ciascun tono
+    pauseDuration : float
+        Durata delle pause
+    Fs : int
+        Frequenza di campionamento
+    silence_threshold : float, optional
+        Soglia per rilevare il silenzio
+        
+    Returns
+    -------
+    detected : list
+        Lista dei tasti riconosciuti
     """
 
-    # segmentazione: tono + pausa
+    # Segmentazione: tono + pausa
     block_size = int(Fs * (toneDuration + pauseDuration))
     N = len(signal)
 
@@ -236,15 +393,15 @@ def detect_sequence_pauses(signal, toneDuration, pauseDuration, Fs, silence_thre
         if len(x) < block_size:
             break
 
-        # estrazione dei toni
+        # Estrazione dei toni
         tone_samples = int(Fs * toneDuration)
         x_tone = x[:tone_samples]
 
-        # le pause vengono saltate
+        # Le pause vengono saltate
         if np.max(np.abs(x_tone)) < silence_threshold:
             continue
 
-        # riconoscimento
+        # Riconoscimento
         key = recNumber(x_tone, Fs)
         detected.append(key)
 

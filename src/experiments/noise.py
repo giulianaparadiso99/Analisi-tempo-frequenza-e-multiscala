@@ -2,11 +2,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import seaborn as sns
+from scipy.fft import fft, fftshift
 from src.DTMF_implementation import recSequence, generate_random_sequence, dialNumber
 
 def add_noise_to_signal(signal, sigma):
     """
     Aggiunge rumore gaussiano a un segnale.
+    
+    Parameters
+    ----------
+    signal : ndarray
+        Segnale pulito
+    sigma : float
+        Deviazione standard del rumore gaussiano
+    
+    Returns
+    -------
+    signal_noisy : ndarray
+        Segnale con rumore
+    noise : ndarray
+        Rumore aggiunto
     """
     noise = np.random.normal(0, sigma, len(signal))
     signal_noisy = signal + noise
@@ -16,6 +31,20 @@ def add_noise_to_signal(signal, sigma):
 def calculate_snr(signal_clean, signal_noisy=None, noise=None):
     """
     Calcola il rapporto segnale-rumore (SNR) in dB.
+    
+    Parameters
+    ----------
+    signal_clean : ndarray
+        Segnale pulito
+    signal_noisy : ndarray, optional
+        Segnale con rumore (alternativo a noise)
+    noise : ndarray, optional
+        Rumore (alternativo a signal_noisy)
+    
+    Returns
+    -------
+    snr_db : float
+        SNR in decibel
     """
     if noise is None:
         if signal_noisy is None:
@@ -36,8 +65,20 @@ def plot_signal_with_noise_comparison(signal_clean, sigmas, duration, Fs,
                                       save_folder="Plots_noise"):
     """
     Genera grafici di confronto tempo/frequenza per diversi livelli di rumore.
+    
+    Parameters
+    ----------
+    signal_clean : ndarray
+        Segnale DTMF pulito
+    sigmas : list
+        Lista di deviazioni standard da testare
+    duration : float
+        Durata del segnale
+    Fs : int
+        Frequenza di campionamento
+    save_folder : str
+        Cartella per salvare i plot
     """
-    from scipy.fft import fft, fftshift
     
     os.makedirs(save_folder, exist_ok=True)
     
@@ -133,7 +174,29 @@ def plot_noise_zoom_temporal(signal_clean, sigmas, Fs, zoom_start=0, zoom_durati
 def test_noise_accuracy(sigmas, duration=0.15, Fs=8000, n_sequences=1000, n_trials=5):
     """
     Testa accuratezza al variare del rumore.
+    
+    Parameters
+    ----------
+    sigmas : list
+        Lista di deviazioni standard del rumore
+    duration : float
+        Durata di ciascun tono
+    Fs : int
+        Frequenza di campionamento
+    n_sequences : int
+        Numero di sequenze casuali diverse
+    n_trials : int
+        Numero di realizzazioni rumorose per sequenza
+    
+    Returns
+    -------
+    results : dict
+        Dizionario con:
+        - 'sigmas': list
+        - 'accuracies': list (%)
+        - 'snrs': list (dB)
     """
+
     accuracies = []
     snrs = []
     
@@ -246,7 +309,24 @@ def plot_accuracy_vs_snr(snrs, accuracies, save_path=None):
 def test_noise_vs_duration(durations, sigmas, Fs=8000, n_sequences=50):
     """
     Testa accuratezza per matrice durata × rumore.
+
+    Parameters
+    ----------
+    durations : list
+        Durate da testare
+    sigmas : list
+        Livelli di rumore da testare
+    Fs : int
+        Frequenza di campionamento
+    n_sequences : int
+        Numero di sequenze per test
+    
+    Returns
+    -------
+    accuracy_matrix : ndarray
+        Matrice (len(durations) × len(sigmas))
     """
+
     accuracy_matrix = np.zeros((len(durations), len(sigmas)))
     
     print("TEST ACCURATEZZA: DURATA × RUMORE")
@@ -319,9 +399,27 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
     1. Confronto segnale pulito/rumoroso (tempo + frequenza)
     2. Zoom temporale
     3. Grafico accuratezza vs σ
-    4. Grafico accuratezza vs SNR (NUOVO)
+    4. Grafico accuratezza vs SNR
     5. Tabella accuratezza per ogni σ
-    6. Heatmap durata × rumore (NUOVO)
+    6. Heatmap durata × rumore
+
+    Parameters
+    ----------
+    sigmas : list, optional
+        Livelli di rumore (default: [0, 0.05, 0.2, 0.5, 1, 2, 3, 4, 5, 6])
+    durations : list, optional
+        Durate per heatmap (default: [0.05, 0.1, 0.15, 0.2, 0.5])
+    Fs : int
+        Frequenza di campionamento
+    n_sequences : int
+        Numero di sequenze per test
+    save_folder : str
+        Cartella output
+    
+    Returns
+    -------
+    results : dict
+        Tutti i risultati degli esperimenti
     """
     if sigmas is None:
         sigmas = [0, 0.05, 0.2, 0.5, 1, 2, 3, 4, 5, 6]
@@ -360,7 +458,7 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
     plot_accuracy_vs_sigma(results_acc['sigmas'], results_acc['accuracies'],
                           save_path=os.path.join(save_folder, "accuracy_vs_sigma.png"))
     
-    # Grafico accuratezza vs SNR (NUOVO)
+    # Grafico accuratezza vs SNR
     plot_accuracy_vs_snr(results_acc['snrs'], results_acc['accuracies'],
                         save_path=os.path.join(save_folder, "accuracy_vs_snr.png"))
     
