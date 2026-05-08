@@ -85,7 +85,7 @@ def test_single_tones_at_duration(duration, Fs=8000, all_tones=None):
         'predicted_labels': predicted_labels
     }
 
-def plot_accuracy_vs_duration_single(durations, accuracies, plot_path=None):
+def plot_accuracy_vs_duration_single(durations, accuracies, save_path=None):
     """
     Crea grafico dell'accuratezza vs durata per singoli toni.
     
@@ -95,7 +95,7 @@ def plot_accuracy_vs_duration_single(durations, accuracies, plot_path=None):
         Lista delle durate testate (in secondi)
     accuracies : list
         Lista delle accuratezze corrispondenti (in %)
-    plot_path : str, optional
+    save_path : str, optional
         Percorso per salvare il grafico
     """
 
@@ -110,16 +110,16 @@ def plot_accuracy_vs_duration_single(durations, accuracies, plot_path=None):
     plt.axhline(y=100, color='green', linestyle='--', alpha=0.5, label='Accuratezza perfetta')
     plt.legend()
     
-    if plot_path:
-        os.makedirs(os.path.dirname(plot_path), exist_ok=True)
-        plt.savefig(plot_path, format='pdf', bbox_inches='tight')
-        print(f"Grafico salvato: {plot_path}")
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Grafico salvato: {save_path}")
     
     plt.tight_layout()
     plt.show()
     plt.close()
     
-def plot_confusion_matrix(true_labels, predicted_labels, title, plot_folder=None):
+def plot_confusion_matrix(true_labels, predicted_labels, title, save_path=None):
     """
     Crea matrice di confusione con heatmap.
     
@@ -131,8 +131,8 @@ def plot_confusion_matrix(true_labels, predicted_labels, title, plot_folder=None
         Etichette predette
     title : str
         Titolo del grafico
-    plot_folder : str, optional
-        Cartella per salvare il grafico
+    save_path : str, optional
+        Percorso per salvare il grafico
     """
     
     # Calcola matrice di confusione
@@ -151,11 +151,12 @@ def plot_confusion_matrix(true_labels, predicted_labels, title, plot_folder=None
     plt.xlabel('Tono predetto', fontsize=12)
     plt.ylabel('Tono reale', fontsize=12)
     
-    if plot_folder:
-        os.makedirs(plot_folder, exist_ok=True)
-        save_path = os.path.join(plot_folder, f"confusion_matrix_single_{duration}s.pdf")
+    # Salvataggio
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
-        print(f"Matrice di confusione salvata: {save_path}")
+        print(f"Grafico salvato: {save_path}")
+
     plt.tight_layout()
     plt.show()
     plt.close()
@@ -355,6 +356,7 @@ def plot_accuracy_vs_duration_sequences(durations, accuracies, save_path=None):
         Percorso per salvare il grafico
     """
 
+    # Plot
     plt.figure(figsize=(10, 6))
     plt.plot(durations, accuracies, 's-', linewidth=2, markersize=8, color='#A23B72')
     plt.xlabel('Durata del tono [s]', fontsize=12)
@@ -366,6 +368,7 @@ def plot_accuracy_vs_duration_sequences(durations, accuracies, save_path=None):
     plt.axhline(y=100, color='green', linestyle='--', alpha=0.5, label='Accuratezza perfetta')
     plt.legend()
     
+    # Salvataggio
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
@@ -378,7 +381,7 @@ def plot_accuracy_vs_duration_sequences(durations, accuracies, save_path=None):
 # WRAPPER
 
 def run_duration_experiments(durations=None, Fs=8000, n_sequences=100, 
-                            save_folder="Plots_duration"):
+                            plot_folder="Plots/improvements/duration"):
     """
     Esegue tutti gli esperimenti sulla variazione della durata del tono.
     
@@ -397,8 +400,8 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
         Frequenza di campionamento
     n_sequences : int
         Numero di sequenze casuali da testare per ogni durata
-    save_folder : str
-        Cartella dove salvare i risultati
+    plot_folder : str
+        Cartella dove salvare i grafici
     
     Returns
     -------
@@ -408,7 +411,7 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
     if durations is None:
         durations = [0.02, 0.05, 0.1, 0.15, 0.2, 0.5]
     
-    os.makedirs(save_folder, exist_ok=True)
+    os.makedirs(plot_folder, exist_ok=True)
     
     print("ESPERIMENTI: VARIAZIONE DELLA DURATA DEL TONO")
     print("PARTE 1: TEST SU SINGOLI TONI")
@@ -425,7 +428,7 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
     plot_accuracy_vs_duration_single(
         durations, 
         single_accuracies,
-        save_path=os.path.join(save_folder, "accuracy_vs_duration_single_tones.pdf")
+        save_path=os.path.join(plot_folder, "accuracy_vs_duration_single_tones.pdf")
     )
     
     # Matrici di confusione per durate critiche
@@ -437,11 +440,11 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
             result['true_labels'],
             result['predicted_labels'],
             f'Matrice di Confusione - Singoli Toni\nDurata: {duration}s',
-            save_path=os.path.join(save_folder, f"confusion_matrix_single_{duration}s.pdf")
+            save_path=os.path.join(plot_folder, f"confusion_matrix_single_{duration}s.pdf")
         )
     
     # Analisi errori e salvataggio report
-    report_path = os.path.join(save_folder, "error_analysis_single_tones.txt")
+    report_path = os.path.join(plot_folder, "error_analysis_single_tones.txt")
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write("ANALISI ERRORI - TEST SINGOLI TONI\n")
         f.write("="*60 + "\n\n")
@@ -473,7 +476,7 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
     plot_accuracy_vs_duration_sequences(
         durations,
         sequence_accuracies,
-        save_path=os.path.join(save_folder, "accuracy_vs_duration_sequences.pdf")
+        save_path=os.path.join(plot_folder, "accuracy_vs_duration_sequences.pdf")
     )
     
     # Matrici di confusione per durate critiche (sequenze)
@@ -483,7 +486,7 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
             result['all_true_tones'],
             result['all_predicted_tones'],
             f'Matrice di Confusione - Sequenze\nDurata: {duration}s',
-            save_path=os.path.join(save_folder, f"confusion_matrix_sequences_{duration}s.pdf")
+            save_path=os.path.join(plot_folder, f"confusion_matrix_sequences_{duration}s.pdf")
         )
     
     print("RIEPILOGO RISULTATI")
@@ -496,7 +499,7 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
     for duration, acc in zip(durations, sequence_accuracies):
         print(f"  {duration}s: {acc:.1f}%")
     
-    print(f"\nTutti i risultati salvati in: {save_folder}/")
+    print(f"\nTutti i risultati salvati in: {plot_folder}/")
     
     return {
         'single_tones': single_tone_results,

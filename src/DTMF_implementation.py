@@ -116,7 +116,7 @@ def tone_plot_save(t, x, Fs, filename="tono.wav", plot_filename="tono.pdf", plot
     audio_path = os.path.join(audio_folder, filename)
     x_norm = x / np.max(np.abs(x))
     x_int16 = np.int16(x_norm * 32767)
-    write(filename, Fs, x_int16)
+    write(audio_path, Fs, x_int16)
     print(f"Audio salvato: {audio_path}")
 
 def plot_all_tones_grid(duration=0.15, Fs=8000, plot_folder="Plots/DTMF_implementation"):
@@ -251,10 +251,11 @@ def plot_and_save_sequence(signal, Fs, filename="sequenza.wav", plot_filename="s
     audio_path = os.path.join(audio_folder, filename)
     signal_norm = signal / np.max(np.abs(signal))
     signal_int16 = np.int16(signal_norm * 32767)
-    write(filename, Fs, signal_int16)
+    write(audio_path, Fs, signal_int16)
     print(f"Audio salvato: {audio_path}")
 
-def plot_spectrum(signal, Fs, plot_filename="spettro.pdf", plot_folder="Plots/DTMF_implementation"):
+def plot_spectrum(signal, Fs, plot_filename="spettro.pdf", plot_folder="Plots/DTMF_implementation",
+                 annotate_dtmf=False, sequence=None):
     """
     Calcola e visualizza lo spettro di un segnale DTMF.
     
@@ -268,6 +269,10 @@ def plot_spectrum(signal, Fs, plot_filename="spettro.pdf", plot_folder="Plots/DT
         Nome del file immagine
     plot_folder : str, optional
         Cartella di salvataggio
+    annotate_dtmf : bool, optional
+        Se True, aggiunge linee verticali alle frequenze DTMF teoriche
+    sequence : str, optional
+        Sequenza di tasti (es. "3456318060") per annotare solo le frequenze presenti
         
     Returns
     -------
@@ -293,6 +298,38 @@ def plot_spectrum(signal, Fs, plot_filename="spettro.pdf", plot_folder="Plots/DT
     plt.xlabel("Frequenza [Hz]")
     plt.ylabel("|X(f)|")
     plt.grid(True)
+    
+    # Annotazioni frequenze DTMF
+    if annotate_dtmf:
+        if sequence is not None:
+            # Trova solo le frequenze presenti nella sequenza
+            freq_set = set()
+            for char in sequence:
+                if char in TONES_DEFAULT:
+                    i, j = TONES_DEFAULT[char]
+                    freq_set.add(F1_DEFAULT[i])
+                    freq_set.add(F2_DEFAULT[j])
+            
+            # Disegna linee per le frequenze trovate
+            for f in sorted(freq_set):
+                plt.axvline(x=f, color='red', linestyle='--', alpha=0.4, linewidth=1)
+                plt.axvline(x=-f, color='red', linestyle='--', alpha=0.4, linewidth=1)
+        else:
+            # Disegna tutte le frequenze DTMF
+            for f in F1_DEFAULT:
+                plt.axvline(x=f, color='red', linestyle='--', alpha=0.3, linewidth=0.8)
+                plt.axvline(x=-f, color='red', linestyle='--', alpha=0.3, linewidth=0.8)
+            
+            for f in F2_DEFAULT:
+                plt.axvline(x=f, color='blue', linestyle='--', alpha=0.3, linewidth=0.8)
+                plt.axvline(x=-f, color='blue', linestyle='--', alpha=0.3, linewidth=0.8)
+            
+            # Legenda
+            plt.axvline(x=-5000, color='red', linestyle='--', alpha=0.5, 
+                       linewidth=1, label='F1 (697-941 Hz)')
+            plt.axvline(x=-5000, color='blue', linestyle='--', alpha=0.5, 
+                       linewidth=1, label='F2 (1209-1633 Hz)')
+            plt.legend(loc='upper right')
 
     # Salvataggio
     os.makedirs(plot_folder, exist_ok=True)

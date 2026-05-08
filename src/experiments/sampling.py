@@ -8,7 +8,7 @@ import os
 from scipy.signal import resample, butter, filtfilt
 from scipy.fft import fft, fftshift
 from src.DTMF_implementation import tone, dialNumber, recSequence
-from src.experiments.noise import generate_random_sequence
+from src.experiments.duration import generate_random_sequence
 
 
 def resample_signal(signal, Fs_original, Fs_target):
@@ -64,7 +64,7 @@ def lowpass_antialias_filter(signal, Fs, cutoff_freq, order=5):
 
 
 def compare_sampling_frequencies_visual(tone_char, duration, Fs_list, 
-                                       save_folder="Plots_sampling"):
+                                       save_path=None):
     """
     Confronta visivamente un tono a diverse frequenze di campionamento.
     
@@ -76,10 +76,9 @@ def compare_sampling_frequencies_visual(tone_char, duration, Fs_list,
         Durata del tono
     Fs_list : list
         Lista di frequenze di campionamento da testare
-    save_folder : str
-        Cartella output
+    save_path : str
+        Percorso per salvare il grafico
     """
-    os.makedirs(save_folder, exist_ok=True)
     
     n_plots = len(Fs_list)
     fig, axes = plt.subplots(n_plots, 2, figsize=(14, 3*n_plots))
@@ -120,15 +119,16 @@ def compare_sampling_frequencies_visual(tone_char, duration, Fs_list,
             ax_freq.legend()
     
     plt.tight_layout()
-    save_path = os.path.join(save_folder, f"sampling_comparison_{tone_char}.png")
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    print(f"Grafico salvato: {save_path}")
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Grafico salvato: {save_path}")
     plt.show()
     plt.close()
 
 
 def demonstrate_aliasing(tone_char='3', duration=0.15, Fs_original=8000,
-                        Fs_target=2000, save_folder="Plots_sampling"):
+                        Fs_target=2000, save_path=None):
     """
     Dimostra il fenomeno dell'aliasing con e senza filtro anti-alias.
     
@@ -142,10 +142,9 @@ def demonstrate_aliasing(tone_char='3', duration=0.15, Fs_original=8000,
         Frequenza di campionamento originale
     Fs_target : int
         Frequenza di campionamento target (sottocampionamento)
-    save_folder : str
-        Cartella output
+    save_path : str
+        Percorso per salvare il grafico
     """
-    os.makedirs(save_folder, exist_ok=True)
     
     # Genera segnale originale
     t_orig, x_orig = tone(tone_char, duration, Fs_original)
@@ -214,9 +213,10 @@ def demonstrate_aliasing(tone_char='3', duration=0.15, Fs_original=8000,
     axes[2, 1].set_xlim(0, Fs_target/2)
     
     plt.tight_layout()
-    save_path = os.path.join(save_folder, "aliasing_demonstration.png")
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    print(f"Grafico aliasing salvato: {save_path}")
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Grafico aliasing salvato: {save_path}")
     plt.show()
     plt.close()
 
@@ -290,7 +290,7 @@ def plot_accuracy_vs_fs(Fs_list, accuracies, save_path=None):
     
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
         print(f"Grafico salvato: {save_path}")
     
     plt.tight_layout()
@@ -299,7 +299,7 @@ def plot_accuracy_vs_fs(Fs_list, accuracies, save_path=None):
 
 
 def run_sampling_experiments(Fs_list=None, duration=0.15, n_sequences=100,
-                            save_folder="Plots_sampling"):
+                            plot_folder="Plots/experiments/sampling"):
     """
     Esegue tutti gli esperimenti sulla frequenza di campionamento.
     
@@ -313,7 +313,7 @@ def run_sampling_experiments(Fs_list=None, duration=0.15, n_sequences=100,
     if Fs_list is None:
         Fs_list = [2000, 3000, 4000, 6000, 8000, 16000]
     
-    os.makedirs(save_folder, exist_ok=True)
+    os.makedirs(plot_folder, exist_ok=True)
     
     print("ESPERIMENTI: FREQUENZA DI CAMPIONAMENTO")
     
@@ -322,13 +322,13 @@ def run_sampling_experiments(Fs_list=None, duration=0.15, n_sequences=100,
     
     test_tones = ['3', 'A', '*']
     for tone_char in test_tones:
-        compare_sampling_frequencies_visual(tone_char, duration, Fs_list, save_folder)
+        compare_sampling_frequencies_visual(tone_char, duration, Fs_list, save_path=os.path.join(plot_folder, f"sampling_comparison_{tone_char}.pdf"))
     
     # Parte 2: Dimostrazione aliasing
     print("\n2. Dimostrazione fenomeno aliasing...")
     demonstrate_aliasing(tone_char='3', duration=duration, 
                         Fs_original=8000, Fs_target=2000, 
-                        save_folder=save_folder)
+                        save_path=os.path.join(plot_folder, "aliasing_demonstration.pdf"))
     
     # Parte 3: Test accuratezza
     print("\n3. Test accuratezza vs frequenza di campionamento...")
@@ -336,7 +336,7 @@ def run_sampling_experiments(Fs_list=None, duration=0.15, n_sequences=100,
     
     # Grafico
     plot_accuracy_vs_fs(results['Fs_list'], results['accuracies'],
-                       save_path=os.path.join(save_folder, "accuracy_vs_fs.png"))
+                       save_path=os.path.join(plot_folder, "accuracy_vs_fs.pdf"))
     
     # Tabella risultati
     print("\nTABELLA RISULTATI")
@@ -366,6 +366,6 @@ def run_sampling_experiments(Fs_list=None, duration=0.15, n_sequences=100,
     print("\nIl filtro anti-alias previene l'aliasing ma elimina")
     print("informazione utile quando Fs e' troppo bassa.")
     
-    print(f"\nRisultati salvati in: {save_folder}/")
+    print(f"\nRisultati salvati in: {plot_folder}/")
     
     return results

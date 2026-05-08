@@ -7,11 +7,8 @@ import os
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 from src.DTMF_implementation import recSequence, dialNumber
-from src.experiments.noise import (
-    generate_random_sequence,
-    add_noise_to_signal,
-    calculate_snr
-)
+from src.experiments.noise import add_noise_to_signal, calculate_snr
+from src.experiments.noise import generate_random_sequence
 
 def moving_average_denoise(x, M):
     """
@@ -206,7 +203,7 @@ def plot_denoising_comparison(sigmas, results, save_path=None):
     
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
         print(f"Grafico salvato: {save_path}")
     
     plt.tight_layout()
@@ -215,7 +212,7 @@ def plot_denoising_comparison(sigmas, results, save_path=None):
 
 
 def run_denoising_experiments(sigmas=None, Fs=8000, n_sequences=100, 
-                              save_folder="Plots_denoising"):
+                              plot_folder="Plots/improvements/denoising"):
     """
     Esegue tutti gli esperimenti di denoising.
 
@@ -227,7 +224,7 @@ def run_denoising_experiments(sigmas=None, Fs=8000, n_sequences=100,
         Frequenza di campionamento
     n_sequences : int
         Numero di sequenze per test
-    save_folder : str
+    plot_folder : str
         Cartella output
     
     Returns
@@ -238,7 +235,7 @@ def run_denoising_experiments(sigmas=None, Fs=8000, n_sequences=100,
     if sigmas is None:
         sigmas = [0, 0.05, 0.2, 0.5, 1, 2, 3, 4, 5, 6]
     
-    os.makedirs(save_folder, exist_ok=True)
+    os.makedirs(plot_folder, exist_ok=True)
     
     print("ESPERIMENTI: TECNICHE DI DENOISING")
     
@@ -247,7 +244,7 @@ def run_denoising_experiments(sigmas=None, Fs=8000, n_sequences=100,
     
     # Plot confronto
     plot_denoising_comparison(sigmas, results,
-                             save_path=os.path.join(save_folder, "denoising_comparison.png"))
+                             save_path=os.path.join(plot_folder, "denoising_comparison.pdf"))
     
     # Tabella risultati
     print("\nTABELLA RISULTATI")
@@ -260,6 +257,6 @@ def run_denoising_experiments(sigmas=None, Fs=8000, n_sequences=100,
               f"{results['leaky_integrator'][i]:<12.1f} "
               f"{results['bandpass'][i]:<12.1f}")
     
-    print(f"\nRisultati salvati in: {save_folder}/")
+    print(f"\nRisultati salvati in: {plot_folder}/")
     
     return results

@@ -63,7 +63,7 @@ def calculate_snr(signal_clean, signal_noisy=None, noise=None):
 
 
 def plot_signal_with_noise_comparison(signal_clean, sigmas, duration, Fs, 
-                                      save_folder="Plots_noise"):
+                                      save_path=None):
     """
     Genera grafici di confronto tempo/frequenza per diversi livelli di rumore.
     
@@ -77,11 +77,9 @@ def plot_signal_with_noise_comparison(signal_clean, sigmas, duration, Fs,
         Durata del segnale
     Fs : int
         Frequenza di campionamento
-    save_folder : str
-        Cartella per salvare i plot
+    save_path : str, optional
+        Percorso per salvare il grafico
     """
-    
-    os.makedirs(save_folder, exist_ok=True)
     
     n_rows = len(sigmas)
     fig, axes = plt.subplots(n_rows, 2, figsize=(14, 3*n_rows))
@@ -126,19 +124,19 @@ def plot_signal_with_noise_comparison(signal_clean, sigmas, duration, Fs,
         ax_freq.set_xlim(0, Fs/2)
     
     plt.tight_layout()
-    save_path = os.path.join(save_folder, "signal_noise_comparison.png")
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    print(f"Grafico salvato: {save_path}")
+    if save_path:  # ← Modificato
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Grafico salvato: {save_path}")
     plt.show()
     plt.close()
 
 
 def plot_noise_zoom_temporal(signal_clean, sigmas, Fs, zoom_start=0, zoom_duration=0.04,
-                             save_folder="Plots_noise"):
+                             save_path=None):
     """
     Crea zoom temporale per mostrare effetto del rumore sulla forma d'onda.
     """
-    os.makedirs(save_folder, exist_ok=True)
     
     # Indici per lo zoom
     idx_start = int(zoom_start * Fs)
@@ -166,9 +164,10 @@ def plot_noise_zoom_temporal(signal_clean, sigmas, Fs, zoom_start=0, zoom_durati
         axes[idx].grid(True, alpha=0.3)
     
     plt.tight_layout()
-    save_path = os.path.join(save_folder, "noise_temporal_zoom.png")
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    print(f"Grafico zoom salvato: {save_path}")
+    if save_path:  # ← Modificato
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Grafico zoom salvato: {save_path}")
     plt.show()
     plt.close()
 
@@ -268,7 +267,7 @@ def plot_accuracy_vs_sigma(sigmas, accuracies, save_path=None):
     
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
         print(f"Grafico salvato: {save_path}")
     
     plt.tight_layout()
@@ -300,9 +299,9 @@ def plot_accuracy_vs_snr(snrs, accuracies, save_path=None):
     
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
         print(f"Grafico salvato: {save_path}")
-    
+
     plt.tight_layout()
     plt.show()
     plt.close()
@@ -385,7 +384,7 @@ def plot_duration_noise_heatmap(durations, sigmas, accuracy_matrix, save_path=No
     
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
         print(f"Heatmap salvata: {save_path}")
     
     plt.tight_layout()
@@ -393,7 +392,7 @@ def plot_duration_noise_heatmap(durations, sigmas, accuracy_matrix, save_path=No
     plt.close()
 
 def run_noise_experiments(sigmas=None, durations=None, Fs=8000, 
-                         n_sequences=100, save_folder="Plots_noise"):
+                         n_sequences=100, plot_folder="Plots/experiments/noise"):
     """
     Esegue tutti gli esperimenti sul rumore.
     Genera:
@@ -414,7 +413,7 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
         Frequenza di campionamento
     n_sequences : int
         Numero di sequenze per test
-    save_folder : str
+    plot_folder : str
         Cartella output
     
     Returns
@@ -428,7 +427,7 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
     if durations is None:
         durations = [0.05, 0.1, 0.15, 0.2, 0.5]
     
-    os.makedirs(save_folder, exist_ok=True)
+    os.makedirs(plot_folder, exist_ok=True)
     
     print("ESPERIMENTI: EFFETTO DEL RUMORE")
     
@@ -441,12 +440,14 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
     
     # Confronto con diversi livelli di rumore
     sigmas_plot = [0.05, 0.2, 0.5, 1, 2]
-    plot_signal_with_noise_comparison(signal_clean, sigmas_plot, 0.15, Fs, save_folder)
+    plot_signal_with_noise_comparison(signal_clean, sigmas_plot,
+                                      0.15, Fs,
+                                      save_path=os.path.join(plot_folder, "signal_noise_comparison.pdf"))
     
     # Zoom temporale
     plot_noise_zoom_temporal(signal_clean, sigmas_plot, Fs, 
                             zoom_start=0.1, zoom_duration=0.04, 
-                            save_folder=save_folder)
+                            save_path=os.path.join(plot_folder, "noise_zoom_temporal.pdf"))
     
     # PARTE 2: Test accuratezza
     
@@ -457,11 +458,11 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
     
     # Grafico accuratezza vs σ
     plot_accuracy_vs_sigma(results_acc['sigmas'], results_acc['accuracies'],
-                          save_path=os.path.join(save_folder, "accuracy_vs_sigma.png"))
+                          save_path=os.path.join(plot_folder, "accuracy_vs_sigma.pdf"))
     
     # Grafico accuratezza vs SNR
     plot_accuracy_vs_snr(results_acc['snrs'], results_acc['accuracies'],
-                        save_path=os.path.join(save_folder, "accuracy_vs_snr.png"))
+                        save_path=os.path.join(plot_folder, "accuracy_vs_snr.pdf"))
     
     # Tabella risultati
     print("TABELLA RISULTATI")
@@ -480,10 +481,10 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
     accuracy_matrix = test_noise_vs_duration(durations, sigmas_heatmap, Fs, n_sequences=50)
     
     plot_duration_noise_heatmap(durations, sigmas_heatmap, accuracy_matrix,
-                               save_path=os.path.join(save_folder, "duration_noise_heatmap.png"))
+                               save_path=os.path.join(plot_folder, "duration_noise_heatmap.pdf"))
     
     print("\n" + "="*60)
-    print(f"Tutti i risultati salvati in: {save_folder}/")
+    print(f"Tutti i risultati salvati in: {plot_folder}/")
     print("="*60 + "\n")
     
     return {

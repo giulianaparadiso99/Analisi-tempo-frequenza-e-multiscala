@@ -14,7 +14,7 @@ from src.DTMF_implementation import (
     F2_DEFAULT,
     TONES_DEFAULT
 )
-from src.experiments.noise import generate_random_sequence
+from src.experiments.duration import generate_random_sequence
 
 def detect_single_tone_with_zeropadding(x, Fs, M=None, F1=None, F2=None, tones=None):
     """
@@ -127,7 +127,7 @@ def recSequence_with_zeropadding(signal, toneDuration, Fs, M=None):
 
 
 def compare_spectrum_with_zeropadding(tone_char, duration, Fs, M_factors=[1, 2, 4, 8],
-                                     save_folder="Plots_zeropadding"):
+                                     save_path=None):
     """
     Confronta lo spettro di un tono con diversi livelli di zero-padding.
 
@@ -141,10 +141,9 @@ def compare_spectrum_with_zeropadding(tone_char, duration, Fs, M_factors=[1, 2, 
         Frequenza di campionamento
     M_factors : list
         Fattori di zero-padding (M = factor * len(x))
-    save_folder : str
-        Cartella output
+    save_path : str, optional
+        Percorso salvataggio grafico
     """
-    os.makedirs(save_folder, exist_ok=True)
     
     # Genera il tono
     t, x = tone(tone_char, duration, Fs)
@@ -188,9 +187,9 @@ def compare_spectrum_with_zeropadding(tone_char, duration, Fs, M_factors=[1, 2, 
         ax_freq.set_xlim(0, Fs/2)
     
     plt.tight_layout()
-    save_path = os.path.join(save_folder, f"zeropadding_comparison_{tone_char}.png")
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    print(f"Grafico salvato: {save_path}")
+    if save_path:
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Grafico salvato: {save_path}")
     plt.show()
     plt.close()
 
@@ -277,7 +276,7 @@ def plot_zeropadding_heatmap(durations, M_factors, accuracy_matrix, save_path=No
     
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
         print(f"Heatmap salvata: {save_path}")
     
     plt.tight_layout()
@@ -286,7 +285,7 @@ def plot_zeropadding_heatmap(durations, M_factors, accuracy_matrix, save_path=No
 
 
 def run_zeropadding_experiments(durations=None, M_factors=None, Fs=8000,
-                                n_sequences=100, save_folder="Plots_zeropadding"):
+                                n_sequences=100, plot_folder="Plots/improvements/zeropadding"):
     """
     Esegue tutti gli esperimenti sullo zero-padding.
     Genera:
@@ -304,7 +303,7 @@ def run_zeropadding_experiments(durations=None, M_factors=None, Fs=8000,
         Frequenza di campionamento
     n_sequences : int
         Numero sequenze per test
-    save_folder : str
+    plot_folder : str
         Cartella output
     
     Returns
@@ -318,7 +317,7 @@ def run_zeropadding_experiments(durations=None, M_factors=None, Fs=8000,
     if M_factors is None:
         M_factors = [1, 2, 4, 8]
     
-    os.makedirs(save_folder, exist_ok=True)
+    os.makedirs(plot_folder, exist_ok=True)
     
     print("ESPERIMENTI: ZERO-PADDING")
     
@@ -327,7 +326,8 @@ def run_zeropadding_experiments(durations=None, M_factors=None, Fs=8000,
     
     test_tones = ['3', 'A', '*']
     for tone_char in test_tones:
-        compare_spectrum_with_zeropadding(tone_char, 0.15, Fs, M_factors, save_folder)
+        compare_spectrum_with_zeropadding(tone_char, 0.15, Fs, M_factors,
+                                          save_path=os.path.join(plot_folder, f"zeropadding_comparison_{tone_char}.pdf"))
     
     # Parte 2: Test accuratezza
     print("\n2. Test accuratezza vs durata e zero-padding...")
@@ -336,7 +336,7 @@ def run_zeropadding_experiments(durations=None, M_factors=None, Fs=8000,
     
     # Plot heatmap
     plot_zeropadding_heatmap(durations, M_factors, accuracy_matrix,
-                            save_path=os.path.join(save_folder, "zeropadding_heatmap.png"))
+                            save_path=os.path.join(plot_folder, "zeropadding_heatmap.pdf"))
     
     # Tabella risultati
     print("\nTABELLA RISULTATI")
@@ -352,7 +352,7 @@ def run_zeropadding_experiments(durations=None, M_factors=None, Fs=8000,
             print(f"{accuracy_matrix[i, j]:<12.1f}", end='')
         print()
     
-    print(f"\nRisultati salvati in: {save_folder}/")
+    print(f"\nRisultati salvati in: {plot_folder}/")
     
     return {
         'accuracy_matrix': accuracy_matrix,

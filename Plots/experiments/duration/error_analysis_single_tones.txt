@@ -1,0 +1,15 @@
+ANALISI ERRORI - TEST SINGOLI TONI
+============================================================
+
+
+Durata 0.02s: Nessun errore - riconoscimento perfetto!
+
+Durata 0.05s: Nessun errore - riconoscimento perfetto!
+
+Durata 0.1s: Nessun errore - riconoscimento perfetto!
+
+Durata 0.15s: Nessun errore - riconoscimento perfetto!
+
+Durata 0.2s: Nessun errore - riconoscimento perfetto!
+
+Durata 0.5s: Nessun errore - riconoscimento perfetto!
