@@ -3,7 +3,8 @@ import numpy as np
 import os
 import seaborn as sns
 from scipy.fft import fft, fftshift
-from src.DTMF_implementation import recSequence, generate_random_sequence, dialNumber
+from src.DTMF_implementation import recSequence, dialNumber
+from src.experiments.duration import generate_random_sequence
 
 def add_noise_to_signal(signal, sigma):
     """

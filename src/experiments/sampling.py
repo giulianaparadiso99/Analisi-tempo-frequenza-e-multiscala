@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 import os
 from scipy.signal import resample, butter, filtfilt
 from scipy.fft import fft, fftshift
-from DTMF_implementation import tone, dialNumber, recSequence
-from noise import generate_random_sequence
+from src.DTMF_implementation import tone, dialNumber, recSequence
+from src.experiments.noise import generate_random_sequence
 
 
 def resample_signal(signal, Fs_original, Fs_target):

@@ -22,10 +22,6 @@ TONES_DEFAULT = {
     '*': (3, 0), '0': (3, 1), '#': (3, 2), 'D': (3, 3)
 }
 
-def save_plot(filename, folder="Plots"):
-    plt.tight_layout()
-    plt.savefig(os.path.join(folder, filename), dpi=300, bbox_inches="tight")
-    print(f"Plot salvato in: {os.path.join(folder, filename)}")
 
 def tone(number, duration, Fs, tones=None, F1=None, F2=None):
     """Genera il tono DTMF per un singolo tasto,
@@ -101,7 +97,9 @@ def tone_plot_save(t, x, Fs, filename="tono.wav", plot_filename="tono.png"):
     plt.xlabel("Tempo [s]")
     plt.ylabel("Ampiezza")
     plt.grid(True)
-    save_plot(plot_filename)
+    os.makedirs("Plots", exist_ok=True)
+    plt.savefig(os.path.join("Plots", plot_filename), dpi=300, bbox_inches="tight")
+    print(f"Plot salvato in: {os.path.join('Plots', plot_filename)}")
     plt.show()
     plt.close()
 
@@ -110,6 +108,62 @@ def tone_plot_save(t, x, Fs, filename="tono.wav", plot_filename="tono.png"):
     x_int16 = np.int16(x_norm * 32767)
     write(filename, Fs, x_int16)
     print(f"Audio salvato: {filename}")
+
+def plot_all_tones_grid(duration=0.15, Fs=8000, save_folder="Plots"):
+    """
+    Visualizza tutti i 16 toni DTMF in una griglia 4x4.
+    Genera due figure: dominio del tempo e dominio della frequenza.
+    """
+    keypad_rows = [
+        ['1', '2', '3', 'A'],
+        ['4', '5', '6', 'B'],
+        ['7', '8', '9', 'C'],
+        ['*', '0', '#', 'D']
+    ]
+    
+    # Plot tempo
+    fig_time, axes_time = plt.subplots(4, 4, figsize=(20, 16))
+    for r in range(4):
+        for c in range(4):
+            key = keypad_rows[r][c]
+            t, x = tone(key, duration, Fs)
+            ax = axes_time[r, c]
+            ax.plot(t, x)
+            ax.set_title(f"Tasto '{key}'", fontsize=12)
+            ax.set_xlabel("Tempo [s]")
+            ax.set_ylabel("Ampiezza")
+            ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    time_path = os.path.join(save_folder, "all_tones_time.png")
+    fig_time.savefig(time_path, dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    
+    # Plot frequenza
+    fig_freq, axes_freq = plt.subplots(4, 4, figsize=(20, 16))
+    for r in range(4):
+        for c in range(4):
+            key = keypad_rows[r][c]
+            t, x = tone(key, duration, Fs)
+            N = len(x)
+            X = fftshift(fft(x))
+            freqs = np.linspace(-Fs/2, Fs/2, N, endpoint=False)
+            ax = axes_freq[r, c]
+            ax.plot(freqs, np.abs(X))
+            ax.set_title(f"Spettro '{key}'", fontsize=12)
+            ax.set_xlabel("Frequenza [Hz]")
+            ax.set_ylabel("|X(f)|")
+            ax.grid(True, alpha=0.3)
+            ax.set_xlim(0, Fs/2)
+    
+    plt.tight_layout()
+    freq_path = os.path.join(save_folder, "all_tones_freq.png")
+    fig_freq.savefig(freq_path, dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    
+    print(f"Plot salvati in: {save_folder}/")
 
 def dialNumber(numbers, toneDuration, Fs):
     """
@@ -164,7 +218,9 @@ def plot_and_save_sequence(signal, Fs, filename="sequenza.wav", plot_filename="s
     plt.xlabel("Tempo [s]")
     plt.ylabel("Ampiezza")
     plt.grid(True)
-    save_plot(plot_filename)
+    os.makedirs("Plots", exist_ok=True)
+    plt.savefig(os.path.join("Plots", plot_filename), dpi=300, bbox_inches="tight")
+    print(f"Plot salvato in: {os.path.join('Plots', plot_filename)}")
     plt.show()
     plt.close()
 
