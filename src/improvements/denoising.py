@@ -3,6 +3,7 @@ denoising.py - Tecniche di filtraggio per ridurre il rumore nei segnali DTMF
 """
 
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 from src.DTMF_implementation import (
@@ -29,6 +30,24 @@ def bandpass_filter_dtmf(x, Fs, lowcut=650, highcut=1700, order=5):
     Filtro passa-banda per frequenze DTMF.
     Lascia passare solo le frequenze tra lowcut e highcut,
     attenuando rumore fuori dalla banda DTMF.
+
+    Parameters
+    ----------
+    x : ndarray
+        Segnale da filtrare
+    Fs : int
+        Frequenza di campionamento
+    lowcut : float
+        Frequenza di taglio bassa (default: 650 Hz)
+    highcut : float
+        Frequenza di taglio alta (default: 1700 Hz)
+    order : int
+        Ordine del filtro (default: 5)
+    
+    Returns
+    -------
+    y : ndarray
+        Segnale filtrato
     """
     
     nyquist = 0.5 * Fs

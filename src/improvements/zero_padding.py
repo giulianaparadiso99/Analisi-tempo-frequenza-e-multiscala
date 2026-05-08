@@ -19,6 +19,27 @@ from src.experiments.noise import generate_random_sequence
 def detect_single_tone_with_zeropadding(x, Fs, M=None, F1=None, F2=None, tones=None):
     """
     Riconosce un singolo tono DTMF usando FFT con zero-padding.
+
+    Parameters
+    ----------
+    x : ndarray
+        Segnale del tono
+    Fs : int
+        Frequenza di campionamento
+    M : int, optional
+        Lunghezza della FFT (con zero-padding se M > len(x))
+        Se None, usa len(x) (nessun zero-padding)
+    F1 : ndarray, optional
+        Frequenze basse (default: F1_DEFAULT)
+    F2 : ndarray, optional
+        Frequenze alte (default: F2_DEFAULT)
+    tones : dict, optional
+        Dizionario toni (default: TONES_DEFAULT)
+        
+    Returns
+    -------
+    key : str or None
+        Tasto riconosciuto
     """
     if F1 is None:
         F1 = F1_DEFAULT
@@ -70,6 +91,22 @@ def detect_single_tone_with_zeropadding(x, Fs, M=None, F1=None, F2=None, tones=N
 def recSequence_with_zeropadding(signal, toneDuration, Fs, M=None):
     """
     Riconosce una sequenza di toni con zero-padding.
+
+    Parameters
+    ----------
+    signal : ndarray
+        Segnale della sequenza
+    toneDuration : float
+        Durata di ciascun tono
+    Fs : int
+        Frequenza di campionamento
+    M : int, optional
+        Lunghezza FFT per zero-padding
+        
+    Returns
+    -------
+    detected : list
+        Lista dei tasti riconosciuti
     """
     samples_per_tone = int(Fs * toneDuration)
     N = len(signal)
@@ -93,6 +130,19 @@ def compare_spectrum_with_zeropadding(tone_char, duration, Fs, M_factors=[1, 2, 
                                      save_folder="Plots_zeropadding"):
     """
     Confronta lo spettro di un tono con diversi livelli di zero-padding.
+
+    Parameters
+    ----------
+    tone_char : str
+        Tasto da analizzare
+    duration : float
+        Durata del tono
+    Fs : int
+        Frequenza di campionamento
+    M_factors : list
+        Fattori di zero-padding (M = factor * len(x))
+    save_folder : str
+        Cartella output
     """
     os.makedirs(save_folder, exist_ok=True)
     
@@ -148,6 +198,22 @@ def compare_spectrum_with_zeropadding(tone_char, duration, Fs, M_factors=[1, 2, 
 def test_zeropadding_vs_duration(durations, M_factors, Fs=8000, n_sequences=50):
     """
     Testa l'accuratezza con zero-padding al variare della durata e di M.
+
+    Parameters
+    ----------
+    durations : list
+        Durate da testare
+    M_factors : list
+        Fattori di zero-padding
+    Fs : int
+        Frequenza di campionamento
+    n_sequences : int
+        Numero di sequenze per test
+        
+    Returns
+    -------
+    accuracy_matrix : ndarray
+        Matrice (len(durations) × len(M_factors))
     """
 
     accuracy_matrix = np.zeros((len(durations), len(M_factors)))
