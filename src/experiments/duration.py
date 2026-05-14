@@ -414,7 +414,7 @@ def plot_sequence_multiple_durations(seq, durations=None, Fs=8000,
         Percorso per salvare il grafico
     """
     if durations is None:
-        durations = [0.05, 0.1, 0.2]
+        durations = [0.01, 0.02, 0.05, 0.1] 
     
     n_rows = len(durations)
     fig, axes = plt.subplots(n_rows, 2, figsize=(14, 3.5*n_rows))
@@ -645,7 +645,7 @@ def plot_accuracy_vs_duration_sequences(durations, accuracies, save_path=None):
    
 # WRAPPER
 
-def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
+def run_duration_experiments(durations=None, durations_plots=None, Fs=8000, n_sequences=100,
                             n_trials=50, tone_char='9', seq='3456318060',
                             plot_folder="Plots/improvements/duration"):
     """
@@ -690,10 +690,12 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
     print("\nVisualizzazione effetto durata su segnale e spettro...")
     
     # Singolo tono a diverse durate
-    durations_visual = [0.02, 0.05, 0.1, 0.2]  # Subset per visualizzazione
+    if durations_plots is None:
+        durations_plots= [0.02, 0.05, 0.1, 0.2]  # Subset per visualizzazione
+    
     plot_single_tone_multiple_durations(
         tone_char=tone_char,
-        durations=durations_visual,
+        durations=durations_plots,
         Fs=Fs,
         save_path=os.path.join(plot_folder, "single_tone_durations_comparison.pdf")
     )
@@ -701,7 +703,7 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
     # Sequenza a diverse durate
     plot_sequence_multiple_durations(
         seq=seq,
-        durations=[0.05, 0.1, 0.2],
+        durations=durations_plots,
         Fs=Fs,
         save_path=os.path.join(plot_folder, "sequence_durations_comparison.pdf")
     )
@@ -758,7 +760,6 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
     sequence_results = {}
     sequence_accuracies = []
     
-    np.random.seed(42)  # Per riproducibilità
     
     for duration in durations:
         result = test_sequences_at_duration(duration, Fs, n_sequences)
