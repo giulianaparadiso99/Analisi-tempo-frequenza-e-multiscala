@@ -200,7 +200,6 @@ def test_single_tones_at_duration(duration, Fs=8000, all_tones=None, n_trials=50
                 'total': n_trials,
                 'accuracy': tone_accuracy
             }
-            print(f"  Tono '{tone_char}': {tone_accuracy:.1f}% ({tone_correct}/{n_trials})")
     
     accuracy = 100 * correct / total
     print(f"\nAccuratezza globale: {accuracy:.1f}% ({correct}/{total})")
