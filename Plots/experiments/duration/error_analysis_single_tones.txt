@@ -2,6 +2,85 @@ ANALISI ERRORI - TEST SINGOLI TONI
 ============================================================
 
 
+============================================================
+ANALISI ERRORI - Durata: 0.005s
+============================================================
+Totale errori: 500/800 (62.5%)
+
+Errori più frequenti:
+
+  '1' → '4': 50 volta/e
+Frequenze reali: 697 Hz, 1209 Hz
+Frequenze predette: 770 Hz, 1209 Hz
+Confusione nella frequenza BASSA (stessa colonna)
+
+  '2' → '5': 50 volta/e
+Frequenze reali: 697 Hz, 1336 Hz
+Frequenze predette: 770 Hz, 1336 Hz
+Confusione nella frequenza BASSA (stessa colonna)
+
+  '3' → 'B': 50 volta/e
+Frequenze reali: 697 Hz, 1477 Hz
+Frequenze predette: 770 Hz, 1633 Hz
+Confusione totale (riga e colonna diverse)
+
+  '6' → 'B': 50 volta/e
+Frequenze reali: 770 Hz, 1477 Hz
+Frequenze predette: 770 Hz, 1633 Hz
+Confusione nella frequenza ALTA (stessa riga)
+
+  '7' → '4': 50 volta/e
+Frequenze reali: 852 Hz, 1209 Hz
+Frequenze predette: 770 Hz, 1209 Hz
+Confusione nella frequenza BASSA (stessa colonna)
+
+============================================================
+NOTA: Risoluzione spettrale Δf = 1/T = 200.00 Hz
+La distanza minima tra frequenze DTMF è:
+  - F1: 73 Hz (es. 770-697 = 73 Hz)
+  - F2: 127 Hz (es. 1336-1209 = 127 Hz)
+
+La risoluzione di 200 Hz è INSUFFICIENTE per
+distinguere frequenze DTMF vicine!
+============================================================
+
+============================================================
+ANALISI ERRORI - Durata: 0.01s
+============================================================
+Totale errori: 200/800 (25.0%)
+
+Errori più frequenti:
+
+  '0' → '8': 50 volta/e
+Frequenze reali: 941 Hz, 1336 Hz
+Frequenze predette: 852 Hz, 1336 Hz
+Confusione nella frequenza BASSA (stessa colonna)
+
+  '*' → '7': 50 volta/e
+Frequenze reali: 941 Hz, 1209 Hz
+Frequenze predette: 852 Hz, 1209 Hz
+Confusione nella frequenza BASSA (stessa colonna)
+
+  '#' → '9': 50 volta/e
+Frequenze reali: 941 Hz, 1477 Hz
+Frequenze predette: 852 Hz, 1477 Hz
+Confusione nella frequenza BASSA (stessa colonna)
+
+  'D' → 'C': 50 volta/e
+Frequenze reali: 941 Hz, 1633 Hz
+Frequenze predette: 852 Hz, 1633 Hz
+Confusione nella frequenza BASSA (stessa colonna)
+
+============================================================
+NOTA: Risoluzione spettrale Δf = 1/T = 100.00 Hz
+La distanza minima tra frequenze DTMF è:
+  - F1: 73 Hz (es. 770-697 = 73 Hz)
+  - F2: 127 Hz (es. 1336-1209 = 127 Hz)
+
+La risoluzione di 100 Hz è INSUFFICIENTE per
+distinguere frequenze DTMF vicine!
+============================================================
+
 Durata 0.02s: Nessun errore - riconoscimento perfetto!
 
 Durata 0.05s: Nessun errore - riconoscimento perfetto!
@@ -11,5 +90,3 @@ Durata 0.1s: Nessun errore - riconoscimento perfetto!
 Durata 0.15s: Nessun errore - riconoscimento perfetto!
 
 Durata 0.2s: Nessun errore - riconoscimento perfetto!
-
-Durata 0.5s: Nessun errore - riconoscimento perfetto!

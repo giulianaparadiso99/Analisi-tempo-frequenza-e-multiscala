@@ -6,6 +6,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.fft import fft, fftshift
 from sklearn.metrics import confusion_matrix
 from src.DTMF_implementation import (
     tone,
@@ -22,9 +23,117 @@ ALL_TONES = ['1','2','3','4','5','6','7','8','9','0','*','#','A','B','C','D']
 
 # FUNZIONI ATOMICHE - SINGOLI TONI
 
-def test_single_tones_at_duration(duration, Fs=8000, all_tones=None):
+def plot_single_tone_multiple_durations(tone_char, durations=None, Fs=8000, 
+                                        save_path=None):
     """
-    Testa il riconoscimento di tutti i toni DTMF a una specifica durata.
+    Visualizza lo stesso tono DTMF a diverse durate nel dominio del tempo 
+    e della frequenza per mostrare l'effetto della risoluzione spettrale.
+    
+    Parameters
+    ----------
+    tone_char : str
+        Tasto DTMF da visualizzare
+    durations : list, optional
+        Liste di durate in secondi (default: [0.02, 0.05, 0.1, 0.2])
+    Fs : int
+        Frequenza di campionamento in Hz
+    save_path : str, optional
+        Percorso per salvare il grafico
+    """
+    if durations is None:
+        durations = [0.02, 0.05, 0.1, 0.2]
+    
+    n_rows = len(durations)
+    fig, axes = plt.subplots(n_rows, 2, figsize=(14, 3.5*n_rows))
+    
+    # Gestione caso singola durata
+    if n_rows == 1:
+        axes = axes.reshape(1, -1)
+    
+    # Ottieni le frequenze del tono per annotazioni
+    i, j = TONES_DEFAULT[tone_char]
+    f1, f2 = F1_DEFAULT[i], F2_DEFAULT[j]
+    
+    for idx, duration in enumerate(durations):
+        # Genera il tono
+        t, x = tone(tone_char, duration, Fs)
+        N = len(x)
+        
+        # Calcola risoluzione spettrale
+        delta_f = 1.0 / duration
+        
+        # ===== PLOT DOMINIO DEL TEMPO =====
+        ax_time = axes[idx, 0]
+        ax_time.plot(t, x, linewidth=1.5, color='#2E86AB')
+        ax_time.set_title(f"Tono '{tone_char}' - Durata: {duration}s\n"
+                         f"({N} campioni)", 
+                         fontsize=11)
+        ax_time.set_xlabel('Tempo [s]', fontsize=10)
+        ax_time.set_ylabel('Ampiezza', fontsize=10)
+        ax_time.grid(True, alpha=0.3)
+        ax_time.set_xlim(0, duration)
+        
+        # ===== PLOT DOMINIO DELLA FREQUENZA =====
+        ax_freq = axes[idx, 1]
+        
+        # Calcola FFT
+        X = fft(x)
+        X_shifted = fftshift(X)
+        freqs = np.linspace(-Fs/2, Fs/2, N, endpoint=False)
+        mag = np.abs(X_shifted)
+        
+        # Plot solo frequenze positive
+        mask_pos = freqs >= 0
+        freqs_pos = freqs[mask_pos]
+        mag_pos = mag[mask_pos]
+        
+        ax_freq.plot(freqs_pos, mag_pos, linewidth=1.5, color='#E63946')
+        ax_freq.set_title(f"Spettro - Risoluzione Δf = {delta_f:.1f} Hz", 
+                         fontsize=11)
+        ax_freq.set_xlabel('Frequenza [Hz]', fontsize=10)
+        ax_freq.set_ylabel('|X(f)|', fontsize=10)
+        ax_freq.grid(True, alpha=0.3)
+        
+        # Linee verticali alle frequenze teoriche
+        ax_freq.axvline(x=f1, color='blue', linestyle='--', alpha=0.6, 
+                       linewidth=1.5, label=f'F1 = {f1} Hz')
+        ax_freq.axvline(x=f2, color='green', linestyle='--', alpha=0.6, 
+                       linewidth=1.5, label=f'F2 = {f2} Hz')
+        
+        # Zoom sulle frequenze DTMF rilevanti
+        ax_freq.set_xlim(500, 2000)
+        ax_freq.legend(fontsize=9)
+        
+        # Annotazione critica per durate brevi
+        if delta_f > 50:
+            ax_freq.text(0.5, 0.95, 
+                        f'⚠ Risoluzione insufficiente!\n'
+                        f'Δf ({delta_f:.0f} Hz) > distanza min. tra F1 (73 Hz)',
+                        transform=ax_freq.transAxes,
+                        fontsize=9, verticalalignment='top',
+                        horizontalalignment='center',
+                        bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+    
+    # Titolo generale
+    fig.suptitle(f"Analisi tono DTMF '{tone_char}' al variare della durata\n"
+                 f"Frequenze teoriche: {f1} Hz (F1) + {f2} Hz (F2)", 
+                 fontsize=14, fontweight='bold', y=0.995)
+    
+    plt.tight_layout(rect=[0, 0, 1, 0.99])
+    
+    # Salvataggio
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Grafico salvato: {save_path}")
+    
+    plt.show()
+    plt.close()
+
+def test_single_tones_at_duration(duration, Fs=8000, all_tones=None, n_trials=50):
+    """
+    Testa il riconoscimento di tutti i toni DTMF a una specifica durata
+    con multiple realizzazioni per robustezza statistica.
     
     Parameters
     ----------
@@ -34,6 +143,8 @@ def test_single_tones_at_duration(duration, Fs=8000, all_tones=None):
         Frequenza di campionamento (default: 8000)
     all_tones : list, optional
         Lista dei toni da testare (default: tutti i 16 toni)
+    n_trials : int, optional
+        Numero di test per ogni tono (default: 50)
     
     Returns
     -------
@@ -45,7 +156,6 @@ def test_single_tones_at_duration(duration, Fs=8000, all_tones=None):
         - 'true_labels': list, etichette reali
         - 'predicted_labels': list, etichette predette
     """
-
     if all_tones is None:
         all_tones = ALL_TONES
     
@@ -54,36 +164,67 @@ def test_single_tones_at_duration(duration, Fs=8000, all_tones=None):
     true_labels = []
     predicted_labels = []
     
-    print(f"\nTest durata: {duration}s")
+    print(f"\nTest durata: {duration}s (n_trials={n_trials} per tono)")
+    
+    # Contatore errori per tono (per report dettagliato)
+    errors_per_tone = {}
     
     for tone_char in all_tones:
-        # Genera il tono
-        t, x = tone(tone_char, duration, Fs)
+        tone_correct = 0
         
-        # Riconosci
-        detected = recNumber(x, Fs)
+        # Testa ogni tono n_trials volte
+        for trial in range(n_trials):
+            # Genera il tono
+            t, x = tone(tone_char, duration, Fs)
+            
+            # Riconosci
+            detected = recNumber(x, Fs)
+            
+            # Registra risultati
+            true_labels.append(tone_char)
+            predicted_labels.append(detected if detected is not None else '?')
+            
+            if detected == tone_char:
+                correct += 1
+                tone_correct += 1
+            
+            total += 1
         
-        # Registra risultati
-        true_labels.append(tone_char)
-        predicted_labels.append(detected if detected is not None else '?')
+        # Calcola accuratezza per questo tono
+        tone_accuracy = 100 * tone_correct / n_trials
         
-        if detected == tone_char:
-            correct += 1
-        else:
-            print(f"  ERRORE: '{tone_char}' → riconosciuto come '{detected}'")
-        
-        total += 1
+        # Se ci sono errori, registra per report
+        if tone_correct < n_trials:
+            errors_per_tone[tone_char] = {
+                'correct': tone_correct,
+                'total': n_trials,
+                'accuracy': tone_accuracy
+            }
+            print(f"  Tono '{tone_char}': {tone_accuracy:.1f}% ({tone_correct}/{n_trials})")
     
     accuracy = 100 * correct / total
-    print(f"Accuratezza: {accuracy:.1f}% ({correct}/{total})")
+    print(f"\nAccuratezza globale: {accuracy:.1f}% ({correct}/{total})")
+    
+    # Report errori se ce ne sono
+    if errors_per_tone:
+        print(f"\nToni con errori:")
+        for tone_char, stats in sorted(errors_per_tone.items(), 
+                                       key=lambda x: x[1]['accuracy']):
+            print(f"  '{tone_char}': {stats['accuracy']:.1f}% "
+                  f"({stats['correct']}/{stats['total']})")
+    else:
+        print("\nNessun errore - riconoscimento perfetto su tutti i toni!")
     
     return {
         'accuracy': accuracy,
         'correct': correct,
         'total': total,
         'true_labels': true_labels,
-        'predicted_labels': predicted_labels
+        'predicted_labels': predicted_labels,
+        'errors_per_tone': errors_per_tone,
+        'n_trials': n_trials
     }
+
 
 def plot_accuracy_vs_duration_single(durations, accuracies, save_path=None):
     """
@@ -256,6 +397,131 @@ def analyze_errors(true_labels, predicted_labels, duration, F1=None, F2=None, to
     return report
    
 # FUNZIONI ATOMICHE - SEQUENZE
+def plot_sequence_multiple_durations(seq, durations=None, Fs=8000, 
+                                     save_path=None):
+    """
+    Visualizza una sequenza DTMF a diverse durate nel dominio del tempo 
+    e della frequenza.
+    
+    Parameters
+    ----------
+    seq : str
+        Sequenza di tasti DTMF
+    durations : list, optional
+        Liste di durate per tono in secondi (default: [0.05, 0.1, 0.2])
+    Fs : int
+        Frequenza di campionamento in Hz
+    save_path : str, optional
+        Percorso per salvare il grafico
+    """
+    if durations is None:
+        durations = [0.05, 0.1, 0.2]
+    
+    n_rows = len(durations)
+    fig, axes = plt.subplots(n_rows, 2, figsize=(14, 3.5*n_rows))
+    
+    # Gestione caso singola durata
+    if n_rows == 1:
+        axes = axes.reshape(1, -1)
+    
+    for idx, duration in enumerate(durations):
+        # Genera la sequenza
+        signal = dialNumber(seq, duration, Fs)
+        N = len(signal)
+        total_duration = len(seq) * duration
+        t = np.linspace(0, total_duration, N)
+        
+        # Calcola risoluzione spettrale
+        delta_f = 1.0 / duration
+        
+        # ===== PLOT DOMINIO DEL TEMPO =====
+        ax_time = axes[idx, 0]
+        ax_time.plot(t, signal, linewidth=1, color='#2E86AB')
+        ax_time.set_title(f"Sequenza '{seq}' - Durata per tono: {duration}s\n"
+                         f"Durata totale: {total_duration}s ({N} campioni)", 
+                         fontsize=11)
+        ax_time.set_xlabel('Tempo [s]', fontsize=10)
+        ax_time.set_ylabel('Ampiezza', fontsize=10)
+        ax_time.grid(True, alpha=0.3)
+        
+        # Linee verticali per separare i toni
+        for i in range(1, len(seq)):
+            ax_time.axvline(x=i*duration, color='red', linestyle=':', 
+                           alpha=0.4, linewidth=1)
+        
+        # Annotazioni dei tasti
+        for i, char in enumerate(seq):
+            ax_time.text((i + 0.5) * duration, ax_time.get_ylim()[1] * 0.9, 
+                        f"'{char}'", ha='center', fontsize=10, 
+                        fontweight='bold', color='darkred')
+        
+        # ===== PLOT DOMINIO DELLA FREQUENZA =====
+        ax_freq = axes[idx, 1]
+        
+        # Calcola FFT
+        X = fft(signal)
+        X_shifted = fftshift(X)
+        freqs = np.linspace(-Fs/2, Fs/2, N, endpoint=False)
+        mag = np.abs(X_shifted)
+        
+        # Plot solo frequenze positive
+        mask_pos = freqs >= 0
+        freqs_pos = freqs[mask_pos]
+        mag_pos = mag[mask_pos]
+        
+        ax_freq.plot(freqs_pos, mag_pos, linewidth=1, color='#E63946')
+        ax_freq.set_title(f"Spettro della sequenza - Risoluzione Δf = {delta_f:.1f} Hz", 
+                         fontsize=11)
+        ax_freq.set_xlabel('Frequenza [Hz]', fontsize=10)
+        ax_freq.set_ylabel('|X(f)|', fontsize=10)
+        ax_freq.grid(True, alpha=0.3)
+        ax_freq.set_xlim(500, 2000)
+        
+        # Annota le frequenze presenti nella sequenza
+        freq_set_f1 = set()
+        freq_set_f2 = set()
+        for char in seq:
+            if char in TONES_DEFAULT:
+                i, j = TONES_DEFAULT[char]
+                freq_set_f1.add(F1_DEFAULT[i])
+                freq_set_f2.add(F2_DEFAULT[j])
+        
+        # Linee verticali per frequenze presenti
+        for f in sorted(freq_set_f1):
+            ax_freq.axvline(x=f, color='blue', linestyle='--', alpha=0.4, linewidth=1)
+        for f in sorted(freq_set_f2):
+            ax_freq.axvline(x=f, color='green', linestyle='--', alpha=0.4, linewidth=1)
+        
+        # Legenda
+        ax_freq.axvline(x=-1000, color='blue', linestyle='--', alpha=0.6, 
+                       label='Freq. F1 presenti')
+        ax_freq.axvline(x=-1000, color='green', linestyle='--', alpha=0.6, 
+                       label='Freq. F2 presenti')
+        ax_freq.legend(fontsize=9, loc='upper right')
+        
+        # Annotazione per risoluzione
+        n_unique_tones = len(set(seq))
+        ax_freq.text(0.02, 0.98, 
+                    f'{n_unique_tones} toni unici nella sequenza\n'
+                    f'{len(freq_set_f1)} freq. F1, {len(freq_set_f2)} freq. F2',
+                    transform=ax_freq.transAxes,
+                    fontsize=9, verticalalignment='top',
+                    bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
+    
+    # Titolo generale
+    fig.suptitle(f"Analisi sequenza DTMF '{seq}' al variare della durata", 
+                 fontsize=14, fontweight='bold', y=0.995)
+    
+    plt.tight_layout(rect=[0, 0, 1, 0.99])
+    
+    # Salvataggio
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Grafico salvato: {save_path}")
+    
+    plt.show()
+    plt.close()
 
 def generate_random_sequence(length, all_tones=None):
     """
@@ -380,12 +646,15 @@ def plot_accuracy_vs_duration_sequences(durations, accuracies, save_path=None):
    
 # WRAPPER
 
-def run_duration_experiments(durations=None, Fs=8000, n_sequences=100, 
+def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
+                            n_trials=50, tone_char='9', seq='3456318060',
                             plot_folder="Plots/improvements/duration"):
     """
     Esegue tutti gli esperimenti sulla variazione della durata del tono.
     
     Genera:
+    - Grafico singolo tono a diverse durate (tempo + frequenza)
+    - Grafico sequenza a diverse durate (tempo + frequenza)
     - Grafico accuratezza vs durata (singoli toni)
     - Matrici di confusione per durate critiche
     - Report errori testuali
@@ -400,6 +669,12 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
         Frequenza di campionamento
     n_sequences : int
         Numero di sequenze casuali da testare per ogni durata
+    n_trials : int
+        Numero di test per ogni tono nei test su singoli toni (default: 50)
+    tone_char : str, optional
+        Tasto per visualizzazione singolo tono (default: '9')
+    seq : str, optional
+        Sequenza per visualizzazione (default: '3456318060')
     plot_folder : str
         Cartella dove salvare i grafici
     
@@ -412,6 +687,25 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
         durations = [0.02, 0.05, 0.1, 0.15, 0.2, 0.5]
     
     os.makedirs(plot_folder, exist_ok=True)
+
+    print("\nVisualizzazione effetto durata su segnale e spettro...")
+    
+    # Singolo tono a diverse durate
+    durations_visual = [0.02, 0.05, 0.1, 0.2]  # Subset per visualizzazione
+    plot_single_tone_multiple_durations(
+        tone_char=tone_char,
+        durations=durations_visual,
+        Fs=Fs,
+        save_path=os.path.join(plot_folder, "single_tone_durations_comparison.pdf")
+    )
+    
+    # Sequenza a diverse durate
+    plot_sequence_multiple_durations(
+        seq=seq,
+        durations=[0.05, 0.1, 0.2],
+        Fs=Fs,
+        save_path=os.path.join(plot_folder, "sequence_durations_comparison.pdf")
+    )
     
     print("ESPERIMENTI: VARIAZIONE DELLA DURATA DEL TONO")
     print("PARTE 1: TEST SU SINGOLI TONI")
@@ -420,7 +714,7 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
     single_accuracies = []
     
     for duration in durations:
-        result = test_single_tones_at_duration(duration, Fs)
+        result = test_single_tones_at_duration(duration, Fs, n_trials=n_trials)
         single_tone_results[duration] = result
         single_accuracies.append(result['accuracy'])
     
@@ -489,11 +783,14 @@ def run_duration_experiments(durations=None, Fs=8000, n_sequences=100,
             save_path=os.path.join(plot_folder, f"confusion_matrix_sequences_{duration}s.pdf")
         )
     
-    print("RIEPILOGO RISULTATI")
-    
+    print("\nRIEPILOGO RISULTATI")
+
     print("\nAccuratezza singoli toni:")
     for duration, acc in zip(durations, single_accuracies):
-        print(f"  {duration}s: {acc:.1f}%")
+        result = single_tone_results[duration]
+        n_trials = result.get('n_trials', 1)
+        total_tests = 16 * n_trials
+        print(f"  {duration}s: {acc:.1f}% (su {total_tests} test)")
     
     print("\nAccuratezza sequenze:")
     for duration, acc in zip(durations, sequence_accuracies):
