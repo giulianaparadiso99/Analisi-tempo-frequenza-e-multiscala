@@ -171,7 +171,7 @@ def plot_noise_zoom_temporal(signal_clean, sigmas, Fs, zoom_start=0, zoom_durati
     plt.show()
     plt.close()
 
-def test_noise_accuracy(sigmas, duration=0.15, Fs=8000, n_sequences=1000, n_trials=5):
+def test_noise_accuracy(sigmas, duration=0.15, Fs=8000, n_sequences=1000, n_trials=50):
     """
     Testa accuratezza al variare del rumore.
     
@@ -306,7 +306,7 @@ def plot_accuracy_vs_snr(snrs, accuracies, save_path=None):
     plt.show()
     plt.close()
 
-def test_noise_vs_duration(durations, sigmas, Fs=8000, n_sequences=50):
+def test_noise_vs_duration(durations, sigmas, Fs=8000, n_sequences=50, n_trials=50):
     """
     Testa accuratezza per matrice durata × rumore.
 
@@ -320,6 +320,8 @@ def test_noise_vs_duration(durations, sigmas, Fs=8000, n_sequences=50):
         Frequenza di campionamento
     n_sequences : int
         Numero di sequenze per test
+    n_trials : int
+        Numero di realizzazioni rumorose per sequenza (default: 50)
     
     Returns
     -------
@@ -346,18 +348,19 @@ def test_noise_vs_duration(durations, sigmas, Fs=8000, n_sequences=50):
                 # Genera segnale
                 signal_clean = dialNumber(seq, duration, Fs)
                 
-                # Aggiungi rumore
-                if sigma == 0:
-                    signal_noisy = signal_clean
-                else:
-                    signal_noisy, _ = add_noise_to_signal(signal_clean, sigma)
-                
-                # Riconosci
-                detected = recSequence(signal_noisy, duration, Fs)
-                
-                total += 1
-                if detected == true_seq:
-                    correct += 1
+                for _ in range(n_trials):
+                    # Aggiungi rumore
+                    if sigma == 0:
+                        signal_noisy = signal_clean
+                    else:
+                        signal_noisy, _ = add_noise_to_signal(signal_clean, sigma)
+                    
+                    # Riconosci
+                    detected = recSequence(signal_noisy, duration, Fs)
+                    
+                    total += 1
+                    if detected == true_seq:
+                        correct += 1
             
             accuracy = 100 * correct / total
             accuracy_matrix[i, j] = accuracy
@@ -392,7 +395,7 @@ def plot_duration_noise_heatmap(durations, sigmas, accuracy_matrix, save_path=No
     plt.close()
 
 def run_noise_experiments(sigmas=None, durations=None, Fs=8000, 
-                         n_sequences=100, plot_folder="Plots/experiments/noise"):
+                         n_sequences=100, n_trials=50, plot_folder="Plots/experiments/noise"):
     """
     Esegue tutti gli esperimenti sul rumore.
     Genera:
@@ -425,7 +428,8 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
         sigmas = [0, 0.05, 0.2, 0.5, 1, 2, 3, 4, 5, 6]
     
     if durations is None:
-        durations = [0.05, 0.1, 0.15, 0.2, 0.5]
+        durations = np.round(np.logspace(np.log10(0.001), np.log10(0.2), 12), 4).tolist()
+    
     
     os.makedirs(plot_folder, exist_ok=True)
     
@@ -454,7 +458,7 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
     print("\n2. Test accuratezza al variare del rumore...")
     
     results_acc = test_noise_accuracy(sigmas, duration=0.15, Fs=Fs, 
-                                     n_sequences=n_sequences, n_trials=5)
+                                     n_sequences=n_sequences, n_trials=n_trials)
     
     # Grafico accuratezza vs σ
     plot_accuracy_vs_sigma(results_acc['sigmas'], results_acc['accuracies'],
@@ -478,7 +482,7 @@ def run_noise_experiments(sigmas=None, durations=None, Fs=8000,
     print("\n3. Test matrice durata × rumore...")
     
     sigmas_heatmap = [0, 0.5, 1, 2, 3, 4]
-    accuracy_matrix = test_noise_vs_duration(durations, sigmas_heatmap, Fs, n_sequences=50)
+    accuracy_matrix = test_noise_vs_duration(durations, sigmas_heatmap, Fs, n_sequences=50, n_trials=n_trials)
     
     plot_duration_noise_heatmap(durations, sigmas_heatmap, accuracy_matrix,
                                save_path=os.path.join(plot_folder, "duration_noise_heatmap.pdf"))
