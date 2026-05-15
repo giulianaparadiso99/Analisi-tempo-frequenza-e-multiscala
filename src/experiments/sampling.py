@@ -110,7 +110,7 @@ def compare_sampling_frequencies_visual(tone_char, duration, Fs_list,
         ax_freq.set_xlabel('Frequenza [Hz]')
         ax_freq.set_ylabel('|X(f)|')
         ax_freq.grid(True, alpha=0.3)
-        ax_freq.set_xlim(0, Fs/2)
+        ax_freq.set_xlim(0, min(2500, Fs/2))
         
         # Evidenzia aliasing se presente
         if Fs < 3300:
@@ -245,21 +245,55 @@ def demonstrate_aliasing(tone_char='9', duration=0.15, Fs_high=8000, Fs_low=2000
     axes[0, 1].grid(True, alpha=0.3)
     axes[0, 1].set_xlim(0, Fs_high/2)
     
-    # ROW 2: Campionamento diretto a bassa Fs
+    # ROW 2: Campionamento diretto a bassa Fs (con aliasing)
     axes[1, 0].plot(t_low, x_low, linewidth=1, color='orange')
     axes[1, 0].set_title(f"Campionamento diretto - Fs = {Fs_low} Hz (Aliasing)")
     axes[1, 0].set_xlabel('Tempo [s]')
     axes[1, 0].set_ylabel('Ampiezza')
     axes[1, 0].grid(True, alpha=0.3)
     
+    # Calcola spettro con aliasing
     X_low = fftshift(fft(x_low))
     freqs_low = np.linspace(-Fs_low/2, Fs_low/2, len(X_low), endpoint=False)
-    axes[1, 1].plot(freqs_low, np.abs(X_low), linewidth=1, color='orange')
+    mag_low = np.abs(X_low)
+    
+    # Trova magnitudo ai picchi per le annotazioni
+    mask_pos = freqs_low >= 0
+    freqs_low_pos = freqs_low[mask_pos]
+    mag_low_pos = mag_low[mask_pos]
+    
+    # Trova magnitudine vicino a 523 Hz (picco aliasato)
+    idx_523 = np.argmin(np.abs(freqs_low_pos - 523))
+    mag_aliased = mag_low_pos[idx_523]
+    
+    # Trova magnitudine vicino a 852 Hz (picco corretto)
+    idx_852 = np.argmin(np.abs(freqs_low_pos - 852))
+    mag_correct = mag_low_pos[idx_852]
+    
+    # Plot spettro
+    axes[1, 1].plot(freqs_low, mag_low, linewidth=1, color='orange')
     axes[1, 1].set_title(f"Spettro con aliasing - Fs = {Fs_low} Hz")
     axes[1, 1].set_xlabel('Frequenza [Hz]')
     axes[1, 1].set_ylabel('|X(f)|')
     axes[1, 1].grid(True, alpha=0.3)
     axes[1, 1].set_xlim(0, Fs_low/2)
+    
+    # Annotazioni (DOPO aver calcolato le magnitudini!)
+    axes[1, 1].annotate('← Picco aliasato\n(1477→523 Hz)', 
+                        xy=(523, mag_aliased), 
+                        xytext=(350, mag_aliased * 0.7),
+                        arrowprops=dict(arrowstyle='->', color='red', lw=1.5),
+                        fontsize=9, ha='right',
+                        bbox=dict(boxstyle='round', facecolor='yellow', alpha=0.8))
+    
+    axes[1, 1].annotate('852 Hz (corretto) →', 
+                        xy=(852, mag_correct), 
+                        xytext=(700, mag_correct * 0.7),
+                        arrowprops=dict(arrowstyle='->', color='green', lw=1.5),
+                        fontsize=9, ha='left',
+                        bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.8))
+    
+    # Linea Nyquist e legenda
     axes[1, 1].axvline(x=Fs_low/2, color='red', linestyle='--', 
                        alpha=0.7, label='Nyquist limit')
     axes[1, 1].legend()
@@ -345,6 +379,13 @@ def plot_accuracy_vs_fs(Fs_list, accuracies, save_path=None):
     """
     plt.figure(figsize=(10, 6))
     plt.plot(Fs_list, accuracies, 'o-', linewidth=2, markersize=8, color='#06A77D')
+    idx_3266 = Fs_list.index(3266)
+    plt.annotate('Transizione critica\n3266 Hz → 100%', 
+             xy=(3266, 100), 
+             xytext=(5000, 85),
+             arrowprops=dict(arrowstyle='->', color='red', lw=2),
+             fontsize=11, ha='left',
+             bbox=dict(boxstyle='round,pad=0.5', facecolor='yellow', alpha=0.7))
     plt.xlabel('Frequenza di campionamento Fs [Hz]', fontsize=12)
     plt.ylabel('Accuratezza [%]', fontsize=12)
     plt.title('Accuratezza di riconoscimento DTMF\nvs Frequenza di campionamento', 

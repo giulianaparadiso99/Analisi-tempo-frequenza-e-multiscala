@@ -6,7 +6,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
-from src.DTMF_implementation import recSequence, dialNumber
+from src.DTMF_implementation import tone, recSequence, dialNumber
 from src.experiments.noise import add_noise_to_signal, calculate_snr
 from src.experiments.noise import generate_random_sequence
 
@@ -89,6 +89,91 @@ def leaky_integrator_denoise(x, lam):
     for n in range(1, len(x)):
         y[n] = lam * y[n-1] + (1 - lam) * x[n]
     return y
+
+def compare_filter_denoising(filter_name, filter_func, tone_char, duration, 
+                             sigmas, Fs=8000, save_path=None):
+    """
+    Confronta effetto di UN filtro per diversi livelli di rumore.
+    
+    Parameters
+    ----------
+    filter_name : str
+        Nome del filtro (per titolo)
+    filter_func : callable
+        Funzione filtro da applicare (es. moving_average_denoise)
+    tone_char : str
+        Tono DTMF da testare (es. '5')
+    duration : float
+        Durata del tono in secondi
+    sigmas : list
+        Livelli di rumore da visualizzare (es. [0.2, 0.5, 1.0])
+    Fs : int
+        Frequenza di campionamento
+    save_path : str, optional
+        Percorso per salvare il plot
+    """
+    n_sigmas = len(sigmas)
+    fig, axes = plt.subplots(n_sigmas, 2, figsize=(14, 4*n_sigmas))
+    
+    # Genera segnale pulito (una volta sola)
+    t, signal_clean = tone(tone_char, duration, Fs)
+    N = len(signal_clean)
+    
+    for i, sigma in enumerate(sigmas):
+        # Aggiungi rumore
+        signal_noisy, _ = add_noise_to_signal(signal_clean, sigma)
+        
+        # Applica filtro
+        signal_filtered = filter_func(signal_noisy)
+        
+        # SUBPLOT TEMPO
+        ax_time = axes[i, 0] if n_sigmas > 1 else axes[0]
+        
+        ax_time.plot(t, signal_clean, 'g-', linewidth=1.5, alpha=0.8, label='Originale')
+        ax_time.plot(t, signal_noisy, 'r-', linewidth=0.5, alpha=0.6, label=f'Rumoroso (σ={sigma})')
+        ax_time.plot(t, signal_filtered, 'b-', linewidth=1.2, alpha=0.8, label='Filtrato')
+        
+        ax_time.set_xlabel('Tempo [s]')
+        ax_time.set_ylabel('Ampiezza')
+        ax_time.set_title(f'Dominio del tempo - σ={sigma}')
+        ax_time.legend(loc='upper right', fontsize=9)
+        ax_time.grid(True, alpha=0.3)
+        
+        # SUBPLOT SPETTRO
+        ax_freq = axes[i, 1] if n_sigmas > 1 else axes[1]
+        
+        # Calcola FFT
+        X_clean = np.fft.fft(signal_clean)
+        X_noisy = np.fft.fft(signal_noisy)
+        X_filtered = np.fft.fft(signal_filtered)
+        
+        freqs = np.fft.fftfreq(N, 1/Fs)
+        
+        # Prendi solo metà positiva
+        pos_mask = freqs >= 0
+        freqs_pos = freqs[pos_mask]
+        
+        ax_freq.plot(freqs_pos, np.abs(X_clean[pos_mask]), 'g-', linewidth=1.5, alpha=0.8, label='Originale')
+        ax_freq.plot(freqs_pos, np.abs(X_noisy[pos_mask]), 'r-', linewidth=0.5, alpha=0.6, label='Rumoroso')
+        ax_freq.plot(freqs_pos, np.abs(X_filtered[pos_mask]), 'b-', linewidth=1.2, alpha=0.8, label='Filtrato')
+        
+        ax_freq.set_xlabel('Frequenza [Hz]')
+        ax_freq.set_ylabel('|X(f)|')
+        ax_freq.set_title(f'Dominio della frequenza - σ={sigma}')
+        ax_freq.set_xlim(0, 2500)
+        ax_freq.legend(loc='upper right', fontsize=9)
+        ax_freq.grid(True, alpha=0.3)
+    
+    plt.suptitle(f'Effetto del filtro: {filter_name}', fontsize=16, y=0.995)
+    plt.tight_layout()
+    
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Plot salvato: {save_path}")
+    
+    plt.show()
+    plt.close()
 
 
 def test_denoising_methods(sigmas, duration=0.15, Fs=8000, n_sequences=100, 
@@ -211,31 +296,51 @@ def plot_denoising_comparison(sigmas, results, save_path=None):
     plt.close()
 
 
-def run_denoising_experiments(sigmas=None, Fs=8000, n_sequences=100, 
+def run_denoising_experiments(sigmas=None, duration=0.15, Fs=8000, 
+                              tone_char='9',n_sequences=100,
+                              sigmas_visual=[0.2, 0.5, 1.0],
                               plot_folder="Plots/improvements/denoising"):
-    """
-    Esegue tutti gli esperimenti di denoising.
-
-    Parameters
-    ----------
-    sigmas : list, optional
-        Livelli di rumore (default: [0, 0.05, 0.2, 0.5, 1, 2, 3, 4, 5, 6])
-    Fs : int
-        Frequenza di campionamento
-    n_sequences : int
-        Numero di sequenze per test
-    plot_folder : str
-        Cartella output
-    
-    Returns
-    -------
-    results : dict
-        Risultati completi esperimenti
-    """
     if sigmas is None:
         sigmas = [0, 0.05, 0.2, 0.5, 1, 2, 3, 4, 5, 6]
     
     os.makedirs(plot_folder, exist_ok=True)
+    print("ESPERIMENTI: TECNICHE DI DENOISING")
+    
+    # Confronti visivi
+    print("\n1. Generazione confronti visuali per filtri...")
+    
+    # Plot per media mobile
+    compare_filter_denoising(
+        filter_name="Media mobile (M=5)",
+        filter_func=lambda x: moving_average_denoise(x, M=5),
+        tone_char=tone_char,
+        duration=duration,
+        sigmas=sigmas_visual,
+        Fs=Fs,
+        save_path=os.path.join(plot_folder, "denoising_moving_average.pdf")
+    )
+    
+    # Plot per leaky integrator
+    compare_filter_denoising(
+        filter_name="Leaky integrator (λ=0.8)",
+        filter_func=lambda x: leaky_integrator_denoise(x, lam=0.8),
+        tone_char=tone_char,
+        duration=duration,
+        sigmas=sigmas_visual,
+        Fs=Fs,
+        save_path=os.path.join(plot_folder, "denoising_leaky_integrator.pdf")
+    )
+    
+    # Plot per passa-banda
+    compare_filter_denoising(
+        filter_name="Passa-banda DTMF (650-1700 Hz)",
+        filter_func=lambda x: bandpass_filter_dtmf(x, Fs),
+        tone_char=tone_char,
+        duration=duration,
+        sigmas=sigmas_visual,
+        Fs=Fs,
+        save_path=os.path.join(plot_folder, "denoising_bandpass.pdf")
+    )
     
     print("ESPERIMENTI: TECNICHE DI DENOISING")
     
