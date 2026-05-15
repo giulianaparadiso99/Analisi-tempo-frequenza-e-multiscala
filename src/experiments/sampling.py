@@ -1,5 +1,5 @@
 """
-Analisi dell'effetto della frequenza di campionamento sui segnali DTMF
+Analisi dell'effetto della frequenza di campionamento sui segnali DTMF.
 """
 
 import numpy as np
@@ -126,11 +126,79 @@ def compare_sampling_frequencies_visual(tone_char, duration, Fs_list,
     plt.show()
     plt.close()
 
-
-def demonstrate_aliasing(tone_char='3', duration=0.15, Fs_original=8000,
-                        Fs_target=2000, save_path=None):
+def compare_sampling_frequencies_sequences_visual(seq='3456318060', duration, Fs_list, 
+                                                 save_path=None):
     """
-    Dimostra il fenomeno dell'aliasing con e senza filtro anti-alias.
+    Confronta visivamente una sequenza DTMF a diverse frequenze di campionamento.
+    
+    Parameters
+    ----------
+    seq : str
+        Sequenza di tasti da analizzare
+    duration : float
+        Durata di ciascun tono nella sequenza
+    Fs_list : list
+        Lista di frequenze di campionamento da testare
+    save_path : str
+        Percorso per salvare il grafico
+    """
+    
+    n_plots = len(Fs_list)
+    fig, axes = plt.subplots(n_plots, 2, figsize=(14, 3*n_plots))
+    
+    if n_plots == 1:
+        axes = axes.reshape(1, -1)
+    
+    for idx, Fs in enumerate(Fs_list):
+        # Genera la sequenza
+        signal = dialNumber(seq, duration, Fs)
+        N = len(signal)
+        t = np.linspace(0, len(seq) * duration, N, endpoint=False)
+        
+        # Dominio del tempo
+        ax_time = axes[idx, 0]
+        ax_time.plot(t, signal, linewidth=1)
+        ax_time.set_title(f"Sequenza '{seq}' - Fs = {Fs} Hz")
+        ax_time.set_xlabel('Tempo [s]')
+        ax_time.set_ylabel('Ampiezza')
+        ax_time.grid(True, alpha=0.3)
+        
+        # Dominio della frequenza
+        ax_freq = axes[idx, 1]
+        
+        X = fft(signal)
+        X_shifted = fftshift(X)
+        freqs = np.linspace(-Fs/2, Fs/2, N, endpoint=False)
+        
+        ax_freq.plot(freqs, np.abs(X_shifted), linewidth=1)
+        ax_freq.set_title(f"Spettro - Fs = {Fs} Hz")
+        ax_freq.set_xlabel('Frequenza [Hz]')
+        ax_freq.set_ylabel('|X(f)|')
+        ax_freq.grid(True, alpha=0.3)
+        ax_freq.set_xlim(0, Fs/2)
+        
+        # Evidenzia aliasing se presente
+        if Fs < 3300:
+            ax_freq.axvline(x=Fs/2, color='red', linestyle='--', 
+                           alpha=0.7, label='Nyquist limit')
+            ax_freq.legend()
+    
+    plt.tight_layout()
+    
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, format='pdf', bbox_inches='tight')
+        print(f"Grafico salvato: {save_path}")
+    
+    plt.show()
+    plt.close()
+
+
+def demonstrate_aliasing(tone_char='3', duration=0.15, Fs_high=8000, Fs_low=2000, 
+                        save_path=None):
+    """
+    Dimostra il fenomeno dell'aliasing confrontando campionamento diretto
+    a frequenze diverse e l'effetto del filtro anti-alias durante ricampionamento.
     
     Parameters
     ----------
@@ -138,85 +206,86 @@ def demonstrate_aliasing(tone_char='3', duration=0.15, Fs_original=8000,
         Tasto da analizzare
     duration : float
         Durata del tono
-    Fs_original : int
-        Frequenza di campionamento originale
-    Fs_target : int
-        Frequenza di campionamento target (sottocampionamento)
+    Fs_high : int
+        Frequenza di campionamento alta (riferimento senza aliasing)
+    Fs_low : int
+        Frequenza di campionamento bassa (con aliasing)
     save_path : str
         Percorso per salvare il grafico
     """
     
-    # Genera segnale originale
-    t_orig, x_orig = tone(tone_char, duration, Fs_original)
+    # Scenario 1: Campionamento diretto ad alta frequenza (riferimento)
+    t_high, x_high = tone(tone_char, duration, Fs_high)
     
-    # Sottocampionamento senza filtro
-    x_downsampled = resample_signal(x_orig, Fs_original, Fs_target)
+    # Scenario 2: Campionamento diretto a bassa frequenza (aliasing vero)
+    t_low, x_low = tone(tone_char, duration, Fs_low)
     
-    # Sottocampionamento con filtro anti-alias
-    cutoff = 0.9 * (Fs_target / 2)
-    x_filtered = lowpass_antialias_filter(x_orig, Fs_original, cutoff)
-    x_filtered_downsampled = resample_signal(x_filtered, Fs_original, Fs_target)
+    # Scenario 3: Ricampionamento con filtro anti-alias
+    cutoff = 0.9 * (Fs_low / 2)
+    x_high_filtered = lowpass_antialias_filter(x_high, Fs_high, cutoff)
+    x_high_resampled = resample_signal(x_high_filtered, Fs_high, Fs_low)
+    t_resampled = np.linspace(0, duration, len(x_high_resampled), endpoint=False)
     
     # Plot
     fig, axes = plt.subplots(3, 2, figsize=(14, 10))
     
-    # Originale
-    t_downsampled = np.linspace(0, duration, len(x_downsampled), endpoint=False)
-    
-    axes[0, 0].plot(t_orig, x_orig, linewidth=1)
-    axes[0, 0].set_title(f"Originale - Fs = {Fs_original} Hz")
+    # ROW 1: Segnale ad alta Fs
+    axes[0, 0].plot(t_high, x_high, linewidth=1)
+    axes[0, 0].set_title(f"Campionamento diretto - Fs = {Fs_high} Hz (Riferimento)")
     axes[0, 0].set_xlabel('Tempo [s]')
     axes[0, 0].set_ylabel('Ampiezza')
     axes[0, 0].grid(True, alpha=0.3)
     
-    X_orig = fftshift(fft(x_orig))
-    freqs_orig = np.linspace(-Fs_original/2, Fs_original/2, len(X_orig), endpoint=False)
-    axes[0, 1].plot(freqs_orig, np.abs(X_orig), linewidth=1)
-    axes[0, 1].set_title(f"Spettro originale - Fs = {Fs_original} Hz")
+    X_high = fftshift(fft(x_high))
+    freqs_high = np.linspace(-Fs_high/2, Fs_high/2, len(X_high), endpoint=False)
+    axes[0, 1].plot(freqs_high, np.abs(X_high), linewidth=1)
+    axes[0, 1].set_title(f"Spettro - Fs = {Fs_high} Hz")
     axes[0, 1].set_xlabel('Frequenza [Hz]')
     axes[0, 1].set_ylabel('|X(f)|')
     axes[0, 1].grid(True, alpha=0.3)
-    axes[0, 1].set_xlim(0, Fs_original/2)
+    axes[0, 1].set_xlim(0, Fs_high/2)
     
-    # Sottocampionato senza filtro
-    axes[1, 0].plot(t_downsampled, x_downsampled, linewidth=1)
-    axes[1, 0].set_title(f"Sottocampionato senza filtro - Fs = {Fs_target} Hz")
+    # ROW 2: Campionamento diretto a bassa Fs
+    axes[1, 0].plot(t_low, x_low, linewidth=1, color='orange')
+    axes[1, 0].set_title(f"Campionamento diretto - Fs = {Fs_low} Hz (Aliasing)")
     axes[1, 0].set_xlabel('Tempo [s]')
     axes[1, 0].set_ylabel('Ampiezza')
     axes[1, 0].grid(True, alpha=0.3)
     
-    X_down = fftshift(fft(x_downsampled))
-    freqs_down = np.linspace(-Fs_target/2, Fs_target/2, len(X_down), endpoint=False)
-    axes[1, 1].plot(freqs_down, np.abs(X_down), linewidth=1, color='orange')
-    axes[1, 1].set_title(f"Spettro con aliasing - Fs = {Fs_target} Hz")
+    X_low = fftshift(fft(x_low))
+    freqs_low = np.linspace(-Fs_low/2, Fs_low/2, len(X_low), endpoint=False)
+    axes[1, 1].plot(freqs_low, np.abs(X_low), linewidth=1, color='orange')
+    axes[1, 1].set_title(f"Spettro con aliasing - Fs = {Fs_low} Hz")
     axes[1, 1].set_xlabel('Frequenza [Hz]')
     axes[1, 1].set_ylabel('|X(f)|')
     axes[1, 1].grid(True, alpha=0.3)
-    axes[1, 1].set_xlim(0, Fs_target/2)
-    axes[1, 1].axvline(x=Fs_target/2, color='red', linestyle='--', 
-                      alpha=0.7, label='Nyquist')
+    axes[1, 1].set_xlim(0, Fs_low/2)
+    axes[1, 1].axvline(x=Fs_low/2, color='red', linestyle='--', 
+                       alpha=0.7, label='Nyquist limit')
     axes[1, 1].legend()
     
-    # Sottocampionato con filtro
-    axes[2, 0].plot(t_downsampled, x_filtered_downsampled, linewidth=1)
-    axes[2, 0].set_title(f"Sottocampionato con filtro anti-alias - Fs = {Fs_target} Hz")
+    # ROW 3: Ricampionamento con filtro anti-alias
+    axes[2, 0].plot(t_resampled, x_high_resampled, linewidth=1, color='green')
+    axes[2, 0].set_title(f"Ricampionamento con filtro anti-alias - Fs = {Fs_low} Hz")
     axes[2, 0].set_xlabel('Tempo [s]')
     axes[2, 0].set_ylabel('Ampiezza')
     axes[2, 0].grid(True, alpha=0.3)
     
-    X_filt_down = fftshift(fft(x_filtered_downsampled))
-    axes[2, 1].plot(freqs_down, np.abs(X_filt_down), linewidth=1, color='green')
-    axes[2, 1].set_title(f"Spettro filtrato - Fs = {Fs_target} Hz")
+    X_resampled = fftshift(fft(x_high_resampled))
+    axes[2, 1].plot(freqs_low, np.abs(X_resampled), linewidth=1, color='green')
+    axes[2, 1].set_title(f"Spettro filtrato (no aliasing) - Fs = {Fs_low} Hz")
     axes[2, 1].set_xlabel('Frequenza [Hz]')
     axes[2, 1].set_ylabel('|X(f)|')
     axes[2, 1].grid(True, alpha=0.3)
-    axes[2, 1].set_xlim(0, Fs_target/2)
+    axes[2, 1].set_xlim(0, Fs_low/2)
     
     plt.tight_layout()
+    
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, format='pdf', bbox_inches='tight')
         print(f"Grafico aliasing salvato: {save_path}")
+    
     plt.show()
     plt.close()
 
@@ -298,7 +367,8 @@ def plot_accuracy_vs_fs(Fs_list, accuracies, save_path=None):
     plt.close()
 
 
-def run_sampling_experiments(Fs_list=None, duration=0.15, n_sequences=100,
+def run_sampling_experiments(Fs_list=None, duration=0.15, tone_char='9',
+                             seq_example="3456318060", n_sequences=100,
                             plot_folder="Plots/experiments/sampling"):
     """
     Esegue tutti gli esperimenti sulla frequenza di campionamento.
@@ -320,13 +390,18 @@ def run_sampling_experiments(Fs_list=None, duration=0.15, n_sequences=100,
     # Parte 1: Confronto visivo
     print("\n1. Generazione confronti visivi...")
     
-    test_tones = ['3', 'A', '*']
+    test_tones = ['9']
     for tone_char in test_tones:
         compare_sampling_frequencies_visual(tone_char, duration, Fs_list, save_path=os.path.join(plot_folder, f"sampling_comparison_{tone_char}.pdf"))
+
+    # Parte 1b: Confronto visivo sequenza
+    print("\n1b. Generazione confronto visivo sequenza...")
+    compare_sampling_frequencies_sequences_visual(seq_example, duration, Fs_list,
+    save_path=os.path.join(plot_folder, f"sampling_comparison_sequence.pdf"))
     
     # Parte 2: Dimostrazione aliasing
     print("\n2. Dimostrazione fenomeno aliasing...")
-    demonstrate_aliasing(tone_char='3', duration=duration, 
+    demonstrate_aliasing(tone_char=tone_char, duration=duration, 
                         Fs_original=8000, Fs_target=2000, 
                         save_path=os.path.join(plot_folder, "aliasing_demonstration.pdf"))
     
