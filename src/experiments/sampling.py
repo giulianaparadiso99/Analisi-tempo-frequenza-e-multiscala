@@ -126,8 +126,8 @@ def compare_sampling_frequencies_visual(tone_char, duration, Fs_list,
     plt.show()
     plt.close()
 
-def compare_sampling_frequencies_sequences_visual(seq='3456318060', duration, Fs_list, 
-                                                 save_path=None):
+def compare_sampling_frequencies_sequences_visual(duration, Fs_list,
+                                                  seq='3456318060', save_path=None):
     """
     Confronta visivamente una sequenza DTMF a diverse frequenze di campionamento.
     
@@ -194,7 +194,7 @@ def compare_sampling_frequencies_sequences_visual(seq='3456318060', duration, Fs
     plt.close()
 
 
-def demonstrate_aliasing(tone_char='3', duration=0.15, Fs_high=8000, Fs_low=2000, 
+def demonstrate_aliasing(tone_char='9', duration=0.15, Fs_high=8000, Fs_low=2000, 
                         save_path=None):
     """
     Dimostra il fenomeno dell'aliasing confrontando campionamento diretto
@@ -367,7 +367,7 @@ def plot_accuracy_vs_fs(Fs_list, accuracies, save_path=None):
     plt.close()
 
 
-def run_sampling_experiments(Fs_list=None, duration=0.15, tone_char='9',
+def run_sampling_experiments(Fs_list=None, duration=0.15, test_tones=['9'],
                              seq_example="3456318060", n_sequences=100,
                             plot_folder="Plots/experiments/sampling"):
     """
@@ -390,20 +390,20 @@ def run_sampling_experiments(Fs_list=None, duration=0.15, tone_char='9',
     # Parte 1: Confronto visivo
     print("\n1. Generazione confronti visivi...")
     
-    test_tones = ['9']
     for tone_char in test_tones:
         compare_sampling_frequencies_visual(tone_char, duration, Fs_list, save_path=os.path.join(plot_folder, f"sampling_comparison_{tone_char}.pdf"))
 
     # Parte 1b: Confronto visivo sequenza
     print("\n1b. Generazione confronto visivo sequenza...")
-    compare_sampling_frequencies_sequences_visual(seq_example, duration, Fs_list,
+    compare_sampling_frequencies_sequences_visual(duration, Fs_list, seq_example,
     save_path=os.path.join(plot_folder, f"sampling_comparison_sequence.pdf"))
     
     # Parte 2: Dimostrazione aliasing
     print("\n2. Dimostrazione fenomeno aliasing...")
-    demonstrate_aliasing(tone_char=tone_char, duration=duration, 
-                        Fs_original=8000, Fs_target=2000, 
-                        save_path=os.path.join(plot_folder, "aliasing_demonstration.pdf"))
+    for tone_char in test_tones:
+        demonstrate_aliasing(tone_char=tone_char, duration=duration, 
+                            Fs_high=8000, Fs_low=2000, 
+                            save_path=os.path.join(plot_folder, f"aliasing_demonstration_{tone_char}.pdf"))
     
     # Parte 3: Test accuratezza
     print("\n3. Test accuratezza vs frequenza di campionamento...")
